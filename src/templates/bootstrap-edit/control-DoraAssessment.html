@@ -1,0 +1,9 @@
+<script type="text/x-handlebars-template">
+        {{#each selectOptions}}
+            <div class="radio">
+                <label>
+                    <input type="radio" name="{{../name}}" value="{{value}}" style="cursor: not-allowed;" {{#if selected}}checked="checked"{{else}}disabled="disabled"{{/if}}/>{{{text}}}
+                </label>
+            </div>
+        {{/each}}
+</script>

@@ -398,3 +398,10 @@ table.dt-rowReorder-float .alpaca-table-reorder-draggable-cell
 {
     color: #aaa;
 }
+
+.alpaca-field-DoraAssessment {
+    background-color: #fcf8e3; /* bg-warning */
+    border: 2px solid #ffeeba;
+    padding: 15px;
+    border-radius: 6px;
+}
