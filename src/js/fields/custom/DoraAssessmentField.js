@@ -51,7 +51,6 @@
         updateDoraAssessment: function() {
             var self = this;
             var currentValue = self.getValue();
-            console.log("Doing dora assesment.");
             var doraAssessment = "No";
             if(self.parent.childrenByPropertyId["DoraAssessmentIsACriticalServiceAffected"].getValue() !== "Yes") {
                 if (doraAssessment !== currentValue) {
