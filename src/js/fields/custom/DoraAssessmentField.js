@@ -88,6 +88,12 @@
                 self.setValue(doraAssessment);
             }
 
+        },
+
+        afterSetValue: function()
+        {
+            this.base();
+            this.triggerUpdate();
         }
     });
 
