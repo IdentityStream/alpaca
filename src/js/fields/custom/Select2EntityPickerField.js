@@ -77,7 +77,24 @@
                 if (!this.options.watermarkLabel) {
                     this.options.watermarkLabel = " - Finn medarbeider - ";
                 }
-                ServiceManagerLibrary.utils.entitypicker.setupEntitySelect2Control($select, tenantId, this.options.watermarkLabel, false, true, false, this.options.crossTenantSelection ? 'IncludeUsersFromAllianceTenants' : 'Tenant', this.options.includeInactiveEntities);
+
+                ServiceManagerLibrary.utils.entitypicker.setupEntitySelect2Control(
+                    $select,
+                    tenantId,
+                    this.options.watermarkLabel,
+                    false, // open
+                    true, // setWidth
+                    false, // allowEnterNoneEntityData
+                    this.options.crossTenantSelection // searchMode
+                        ? 'IncludeUsersFromAllianceTenants'
+                        : 'Tenant',
+                    // Optional arguments below
+                    this.options.displayExpression,
+                    this.options.includeInactiveEntities,
+                    // includeExternalUsers
+                    // includeSupportUsers
+                    // isAjax
+                );
             }
             callback();
         },
@@ -199,6 +216,12 @@
                         "type": "boolean",
                         "default": false,
                     },
+                    "displayExpression": {
+                      "title": "Display expression",
+                      "description": "Hafr expression for controlling how the entity is displayed in the control.",
+                      "type": "string",
+                      "default": ""
+                    },
                     "additionalOptions": {
                       "title": "Additional options",
                       "description": "Additional options to pass to the entity search",
@@ -318,6 +341,11 @@
                         "rightLabel": "Include inactive entities",
                         "helper": "Raise this flag to fetch inactive entities.",
                         "type": "checkbox",
+                    },
+                    "displayExpression": {
+                        "rightLabel": "Set display expression",
+                        "helper": "Expression for controlling how the entity is displayed.",
+                        "type": "text",
                     },
                     "additionalOptions": {
                       "type": "json"
