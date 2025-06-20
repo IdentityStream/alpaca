@@ -62,6 +62,7 @@
             if(self.parent.childrenByPropertyId["DoraAssessmentUnauthorizedAccess"].getValue() === "Yes") {
                 doraAssessment = "Yes";
                 if (doraAssessment !== currentValue) {
+                    self.setIncidentClassificationDateTime();
                     self.setValue(doraAssessment);
                 }
                 return;
@@ -85,6 +86,9 @@
                 doraAssessment = "Yes";
             }
             if(doraAssessment !== currentValue) {
+                if(doraAssessment === "Yes") {
+                    self.setIncidentClassificationDateTime();
+                }
                 self.setValue(doraAssessment);
             }
 
@@ -94,6 +98,14 @@
         {
             this.base();
             this.triggerUpdate();
+        },
+
+        setIncidentClassificationDateTime: function()
+        {
+            var incidentClassificationDateTimeHasValue = this.parent.childrenByPropertyId["DoraInitialNotificationIncidentClassificationDateTime"].getValue();
+            if(!incidentClassificationDateTimeHasValue) {
+                this.parent.childrenByPropertyId["DoraInitialNotificationIncidentClassificationDateTime"].setValue(new Date().toISOString());
+            }
         }
     });
 
