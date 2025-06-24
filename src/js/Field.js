@@ -2643,7 +2643,8 @@
                             "AccessAssignmentUsers",
                             "Process",
                             "TargetService",
-                            "Customer"
+                            "Customer",
+                            "ExternalReference"
                         ]
                     },
                     "fieldClass": {
@@ -2832,7 +2833,8 @@
                             "Målbrukere for tilgangsendring",
                             "Prosess",
                             "Måltjeneste",
-                            "Kunde"
+                            "Kunde",
+                            "Ekstern referanse"
                         ]
                     },
                     "fieldClass": {
