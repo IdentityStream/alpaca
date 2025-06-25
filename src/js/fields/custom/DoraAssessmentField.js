@@ -3,6 +3,8 @@
     var Alpaca = $.alpaca;
 
     Alpaca.Fields.DoraAssessmentField = Alpaca.Fields.RadioField.extend({
+        firstUpdate: true,
+
         setup: function()
         {
             this.base();
@@ -53,7 +55,7 @@
             var currentValue = self.getValue();
             var doraAssessment = "No";
             if(self.parent.childrenByPropertyId["DoraAssessmentIsACriticalServiceAffected"].getValue() !== "Yes") {
-                if (doraAssessment !== currentValue) {
+                if (self.firstUpdate || doraAssessment !== currentValue) {
                     self.setValue(doraAssessment);
                 }
                 return;
@@ -61,7 +63,7 @@
 
             if(self.parent.childrenByPropertyId["DoraAssessmentUnauthorizedAccess"].getValue() === "Yes") {
                 doraAssessment = "Yes";
-                if (doraAssessment !== currentValue) {
+                if (self.firstUpdate || doraAssessment !== currentValue) {
                     self.setIncidentClassificationDateTime();
                     self.setValue(doraAssessment);
                 }
@@ -99,18 +101,18 @@
             if(numAdditionalCriteria > 1){
                 doraAssessment = "Yes";
             }
-            if(doraAssessment !== currentValue) {
+            if(self.firstUpdate || doraAssessment !== currentValue) {
                 if(doraAssessment === "Yes") {
                     self.setIncidentClassificationDateTime();
                 }
                 self.setValue(doraAssessment);
             }
-
         },
 
         afterSetValue: function()
         {
             this.base();
+            this.firstUpdate = false;
             this.triggerUpdate();
         },
 
