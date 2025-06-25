@@ -1,0 +1,9 @@
+<script type="text/x-handlebars-template">
+        {{#each selectOptions}}
+            <div class="radio">
+                <label class="dora-assessment-label">
+                    <input type="radio" name="{{../name}}" style="cursor: not-allowed;" value="{{value}}"/>{{{text}}}
+                </label>
+            </div>
+        {{/each}}
+</script>

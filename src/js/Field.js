@@ -943,7 +943,6 @@
                     $(this.field).addClass("alpaca-readonly");
 
                     $('input', this.field).attr('readonly', 'readonly');
-
                     // disable the field
                     doDisableField();
 
