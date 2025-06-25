@@ -68,20 +68,34 @@
                 return;
             }
             var additionalCriteria =  [
-                "DoraAssessmentClients",
-                "DoraAssessmentDataLoss",
-                "DoraAssessmentReputation",
-                "DoraAssessmentDuration",
-                "DoraAssessmentGeographicalSpread",
-                "DoraAssessmentEconomicImpact"
+                { field: "DoraAssessmentClients", consequences: ["Delivery"] },
+                { field: "DoraAssessmentDataLoss", consequences: ["Information"] },
+                { field: "DoraAssessmentReputation", consequences: ["Reputation", "Relations"] },
+                { field: "DoraAssessmentDuration", consequences: ["Delivery"] },
+                { field: "DoraAssessmentGeographicalSpread", consequences: ["Delivery"] },
+                { field: "DoraAssessmentEconomicImpact", consequences: ["MonetaryValues"] },
             ];
             var numAdditionalCriteria = 0;
+            var consequenceMatrixValue = self.parent.childrenByPropertyId["ConsequenceMatrix"].getValue();
+            var originalConsequencesLength = consequenceMatrixValue.length;
             additionalCriteria.forEach(function (additionalCriterion){
-                 if(self.parent.childrenByPropertyId[additionalCriterion].getValue() === "Yes") {
+                var additionalCriteriaValue = self.parent.childrenByPropertyId[additionalCriterion.field].getValue();
+                 
+                 if(additionalCriteriaValue === "Yes") {
                     numAdditionalCriteria++;
+                     if(self.options.updateConsequences) {
+                        additionalCriterion.consequences.forEach(function (consequence){
+                            if(!consequenceMatrixValue.includes(consequence)){
+                                consequenceMatrixValue.push(consequence);
+                            }
+                        })
+                    }
                  }
             });
-
+            if(originalConsequencesLength != consequenceMatrixValue.length) {
+                self.parent.childrenByPropertyId["ConsequenceMatrix"].setValue(consequenceMatrixValue);
+                self.parent.childrenByPropertyId["ConsequenceMatrix"].triggerUpdate();
+            }
             if(numAdditionalCriteria > 1){
                 doraAssessment = "Yes";
             }
@@ -106,7 +120,32 @@
             if(!incidentClassificationDateTimeHasValue) {
                 this.parent.childrenByPropertyId["DoraInitialNotificationIncidentClassificationDateTime"].setValue(new Date().toISOString());
             }
-        }
+        },
+        getSchemaOfOptions: function () {
+                const schemaOfOptions = Alpaca.merge(this.base(), {
+                    properties: {
+                        updateConsequences: {
+                            title: "Update consequences",
+                            description: "Updates the consequences based on DORA selection.",
+                            type: "boolean",
+                            default: true
+                        }
+                    }
+                });
+                return schemaOfOptions;
+            },
+
+            getOptionsForOptions: function () {
+                const optionsForOptions = Alpaca.merge(this.base(), {
+                    fields: {
+                        updateConsequences: {
+                            rightLabel: "Update consequences based on DORA selection?",
+                            "type": "checkbox",
+                        }
+                    }
+                });
+                return optionsForOptions;
+            }
     });
 
     Alpaca.registerFieldClass("DoraAssessment", Alpaca.Fields.DoraAssessmentField);
