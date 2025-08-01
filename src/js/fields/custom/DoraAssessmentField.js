@@ -48,6 +48,109 @@
                 }
             });
             self.updateDoraAssessment();
+            if(self.options.updateCauses) {
+                var doraCausesFields = [
+                    "DoraFinalReportHighLevelRootCause",
+                    "DoraFinalReportDetailedClassificationHumanError",
+                    "DoraFinalReportDetailedClassificationProcessFailure",
+                    "DoraFinalReportDetailedClassificationExternalEvent",
+                ]
+                doraCausesFields.forEach(function (doraCauseField){
+                    var doraAlpacaField = self.parent.childrenByPropertyId[doraCauseField];
+                    if (doraAlpacaField) {
+                        doraAlpacaField.getFieldEl().bind("fieldupdate", function(event)
+                            {
+                                self.updateCauses();
+                            }
+                        );
+                    }
+                });
+                self.updateCauses();
+            }
+        },
+
+        updateCauses: function() {
+            var self = this;
+            //Set high level cause
+            var causeValue = self.parent.childrenByPropertyId["IncidentWhy"].getValue();
+            var originalCauseLength = causeValue.length;
+            var DoraFinalReportHighLevelRootCauseValue = self.parent.childrenByPropertyId["DoraFinalReportHighLevelRootCause"].getValue();
+            var DoraFinalReportDetailedClassificationHumanErrorValue = self.parent.childrenByPropertyId["DoraFinalReportDetailedClassificationHumanError"].getValue();
+            var DoraFinalReportDetailedClassificationProcessFailureValue = self.parent.childrenByPropertyId["DoraFinalReportDetailedClassificationProcessFailure"].getValue();
+            var DoraFinalReportDetailedClassificationExternalEventValue = self.parent.childrenByPropertyId["DoraFinalReportDetailedClassificationExternalEvent"].getValue();
+            if(DoraFinalReportHighLevelRootCauseValue.includes("malicious_actions")){
+                if(!causeValue.includes("Criminality")){
+                    causeValue.push("Criminality");
+                }
+            }
+            if(DoraFinalReportHighLevelRootCauseValue.includes("system_failure_malfunction")){
+                if(!causeValue.includes("System")){
+                    causeValue.push("System");
+                }
+            }
+            if(DoraFinalReportDetailedClassificationHumanErrorValue.includes("human_error_miscommunication")){
+                if(!causeValue.includes("Communication")){
+                    causeValue.push("Communication");
+                }
+            }
+            if(DoraFinalReportDetailedClassificationExternalEventValue.includes("external_event_natural_disasters_force_majeure")){
+                if(!causeValue.includes("ForceMajeure")){
+                    causeValue.push("ForceMajeure");
+                }
+            }
+            if(DoraFinalReportDetailedClassificationProcessFailureValue.includes("process_failure_insufficient_monitoring_or_failure_of_monitoring_and_control")){
+                if(!causeValue.includes("Controll")){
+                    causeValue.push("Controll");
+                }
+            }
+            if(DoraFinalReportDetailedClassificationProcessFailureValue.includes("process_failure_inadequacy_of_internal_policies_procedures_and_documentation")){
+                if(!causeValue.includes("Process")){
+                    causeValue.push("Process");
+                }
+            }
+            if( DoraFinalReportDetailedClassificationHumanErrorValue.includes("human_error_skills_knowledge") || 
+                DoraFinalReportDetailedClassificationHumanErrorValue.includes("human_error_inadequate_human_resources") ||
+                DoraFinalReportDetailedClassificationProcessFailureValue.includes("process_failure_insufficient_unclear_roles_and_responsibilities")){
+                if(!causeValue.includes("CompetenceAndCapacity")){
+                    causeValue.push("CompetenceAndCapacity");
+                }
+            }
+            if( DoraFinalReportDetailedClassificationHumanErrorValue.includes("human_error_omission") || 
+                DoraFinalReportDetailedClassificationHumanErrorValue.includes("human_error_mistake") ||
+                DoraFinalReportDetailedClassificationExternalEventValue.includes("external_event_third-party_failures")){
+                if(!causeValue.includes("Human error")){
+                    causeValue.push("Human error");
+                }
+            }
+            if(originalCauseLength != causeValue.length) {
+                self.parent.childrenByPropertyId["IncidentWhy"].setValue(causeValue);
+                self.parent.childrenByPropertyId["IncidentWhy"].triggerUpdate();
+            }
+            //Set detailed cause
+            if( DoraFinalReportDetailedClassificationHumanErrorValue.includes("human_error_omission")){
+                var competenceValue = self.parent.childrenByPropertyId["CompetanceAndCapacityCategory"].getValue();
+                if(!competenceValue.includes("Training")){
+                    competenceValue.push("Training");
+                    self.parent.childrenByPropertyId["CompetanceAndCapacityCategory"].setValue(competenceValue);
+                    self.parent.childrenByPropertyId["CompetanceAndCapacityCategory"].triggerUpdate();
+                }
+            }
+            if( DoraFinalReportDetailedClassificationHumanErrorValue.includes("human_error_omission")){
+                var competenceValue = self.parent.childrenByPropertyId["CompetanceAndCapacityCategory"].getValue();
+                if(!competenceValue.includes("Training")){
+                    competenceValue.push("Training");
+                    self.parent.childrenByPropertyId["CompetanceAndCapacityCategory"].setValue(competenceValue);
+                    self.parent.childrenByPropertyId["CompetanceAndCapacityCategory"].triggerUpdate();
+                }
+            }
+            if( DoraFinalReportDetailedClassificationProcessFailureValue.includes("process_failure_insufficient_unclear_roles_and_responsibilities")){
+                var competenceValue = self.parent.childrenByPropertyId["CompetanceAndCapacityCategory"].getValue();
+                if(!competenceValue.includes("NonExistingResponsibility")){
+                    competenceValue.push("NonExistingResponsibility");
+                    self.parent.childrenByPropertyId["CompetanceAndCapacityCategory"].setValue(competenceValue);
+                    self.parent.childrenByPropertyId["CompetanceAndCapacityCategory"].triggerUpdate();
+                }
+            }
         },
         
         updateDoraAssessment: function() {
@@ -131,6 +234,12 @@
                             description: "Updates the consequences based on DORA selection.",
                             type: "boolean",
                             default: true
+                        },
+                        updateCauses: {
+                            title: "Update causes",
+                            description: "Updates the causes based on DORA selection.",
+                            type: "boolean",
+                            default: true
                         }
                     }
                 });
@@ -142,6 +251,10 @@
                     fields: {
                         updateConsequences: {
                             rightLabel: "Update consequences based on DORA selection?",
+                            "type": "checkbox",
+                        },
+                        updateCauses: {
+                            rightLabel: "Update causes based on DORA selection?",
                             "type": "checkbox",
                         }
                     }
