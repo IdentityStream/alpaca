@@ -35,7 +35,8 @@
                 "DoraAssessmentDuration",
                 "DoraAssessmentGeographicalSpread",
                 "DoraAssessmentAffectedCountries",
-                "DoraAssessmentEconomicImpact"
+                "DoraAssessmentEconomicImpact",
+                "DoraReportedByThirdParty"
             ];
             doraFields.forEach(function (doraField){
                 var doraAlpacaField = self.parent.childrenByPropertyId[doraField];
@@ -157,6 +158,13 @@
             var self = this;
             var currentValue = self.getValue();
             var doraAssessment = "No";
+            if(self.parent.childrenByPropertyId["DoraReportedByThirdParty"].getValue() === "Yes") {
+                doraAssessment = "YesReportedByThirdParty";
+                if (self.firstUpdate || doraAssessment !== currentValue) {
+                    self.setValue(doraAssessment);
+                }
+                return;
+            }
             if(self.parent.childrenByPropertyId["DoraAssessmentIsACriticalServiceAffected"].getValue() !== "Yes") {
                 if (self.firstUpdate || doraAssessment !== currentValue) {
                     self.setValue(doraAssessment);
