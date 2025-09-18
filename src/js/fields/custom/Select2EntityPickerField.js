@@ -160,6 +160,7 @@
                                     "Outsourcing",
                                     "RiskAssessment",
                                     "LocationEntity",
+                                    "BusinessFunction",
                                 ]
                     },
                     "typeFilter": {
@@ -278,7 +279,8 @@
                                             "Access level", 
                                             "Outsourcing / ICT service agreement", 
                                             "Risk assessment", 
-                                            "Kontorlokasjon"
+                                            "Kontorlokasjon",
+                                            "Business function",
                                         ]
                     },
                     "typeFilter": {
