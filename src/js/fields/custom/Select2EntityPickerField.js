@@ -86,7 +86,7 @@
                     true, // setWidth
                     false, // allowEnterNoneEntityData
                     this.options.crossTenantSelection // searchMode
-                        ? 'IncludeUsersFromAllianceTenants'
+                        ? 'IncludeUsersFromOtherTenantsWithRoleInTenant'
                         : 'Tenant',
                     // Optional arguments below
                     this.options.displayExpression,
