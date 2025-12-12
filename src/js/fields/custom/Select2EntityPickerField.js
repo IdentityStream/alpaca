@@ -161,6 +161,7 @@
                                     "RiskAssessment",
                                     "LocationEntity",
                                     "BusinessFunction",
+                                    "FinancialEntity",
                                 ]
                     },
                     "typeFilter": {
@@ -281,6 +282,7 @@
                                             "Risk assessment", 
                                             "Kontorlokasjon",
                                             "Business function",
+                                            "Financial entity",
                                         ]
                     },
                     "typeFilter": {
