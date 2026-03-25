@@ -95,6 +95,24 @@
                     // includeSupportUsers
                     // isAjax
                 );
+
+                var self = this;
+                $.ajax({
+                    url: '/api/service/' + encodeURIComponent(self.options.entityType) + '/create-entity-url',
+                    type: 'GET',
+                    dataType: 'json'
+                }).done(function (url) {
+                    if (url) {
+                        var $link = $('<a>')
+                            .attr('href', url)
+                            .attr('target', '_blank')
+                            .addClass('btn btn-xs btn-link')
+                            .css('margin-top', '4px')
+                            .css('float', 'right')
+                            .html('<i class="fa fa-plus-circle"></i> Opprett ny');
+                        $select.after($link);
+                    }
+                });
             }
             callback();
         },
