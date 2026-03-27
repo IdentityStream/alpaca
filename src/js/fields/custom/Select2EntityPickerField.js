@@ -103,14 +103,28 @@
                     dataType: 'json'
                 }).done(function (url) {
                     if (url) {
-                        var $link = $('<a>')
-                            .attr('href', url)
-                            .attr('target', '_blank')
-                            .addClass('btn btn-xs btn-link')
-                            .css('margin-top', '4px')
-                            .css('float', 'right')
-                            .html('<i class="fa fa-plus-circle"></i> Opprett ny');
-                        $select.after($link);
+                        $select.on('select2:open', function () {
+                            var $dropdown = $select.data('select2').dropdown.$dropdown;
+                            if ($dropdown && !$dropdown.find('.create-new-entity').length) {
+                                $('<div class="create-new-entity">')
+                                    .css({
+                                        padding: '6px 12px',
+                                        cursor: 'pointer',
+                                        borderTop: '1px solid #ddd',
+                                        color: '#337ab7'
+                                    })
+                                    .html('<i class="fa fa-plus-circle"></i> Opprett ny')
+                                    .on('mouseenter', function () { $(this).css('background-color', '#f5f5f5'); })
+                                    .on('mouseleave', function () { $(this).css('background-color', '#fff'); })
+                                    .on('mousedown', function (e) {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        window.open(url, '_blank');
+                                        $select.select2('close');
+                                    })
+                                    .appendTo($dropdown);
+                            }
+                        });
                     }
                 });
             }
