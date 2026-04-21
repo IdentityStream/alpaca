@@ -180,12 +180,8 @@
                 }
                 return;
             }
-            var additionalCriteria =  [
-                { field: "DoraAssessmentClients", consequences: ["Delivery"] },
-                { field: "DoraAssessmentDataLoss", consequences: ["Information"] },
-                { field: "DoraAssessmentReputation", consequences: ["Reputation", "Relations"] },
-                { field: "DoraAssessmentDuration", consequences: ["Delivery"] },
-                { field: "DoraAssessmentGeographicalSpread", consequences: ["Delivery"] },
+            var additionalCriteria = [
+                { field: "DoraAssessmentClients", consequences: ["Customer"] },
                 { field: "DoraAssessmentEconomicImpact", consequences: ["MonetaryValues"] },
             ];
             var numAdditionalCriteria = 0;
