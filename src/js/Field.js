@@ -2643,7 +2643,8 @@
                             "Process",
                             "TargetService",
                             "Customer",
-                            "ExternalReference"
+                            "ExternalReference",
+                            "ExternalPartyEmail"
                         ]
                     },
                     "fieldClass": {
@@ -2833,7 +2834,8 @@
                             "Prosess",
                             "Måltjeneste",
                             "Kunde",
-                            "Ekstern referanse"
+                            "Ekstern referanse",
+                            "E-postadresse ekstern part"
                         ]
                     },
                     "fieldClass": {
