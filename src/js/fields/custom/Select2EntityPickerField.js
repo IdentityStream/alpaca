@@ -194,6 +194,7 @@
                                     "LocationEntity",
                                     "BusinessFunction",
                                     "FinancialEntity",
+                                    "BusinessProcess",
                                 ]
                     },
                     "typeFilter": {
@@ -315,6 +316,7 @@
                                             "Kontorlokasjon",
                                             "Business function",
                                             "Financial entity",
+                                            "Forretningsprosess",
                                         ]
                     },
                     "typeFilter": {
