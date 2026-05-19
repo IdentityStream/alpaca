@@ -143,6 +143,20 @@
             }
         },
 
+        disable: function() {
+            var $el = $(this.getControlEl());
+            if ($el.data('select2')) {
+                $el.prop("disabled", true);
+            }
+        },
+
+        enable: function() {
+            var $el = $(this.getControlEl());
+            if ($el.data('select2')) {
+                $el.prop("disabled", false);
+            }
+        },
+
         _validateEnum: function () {
             return true;
         },
