@@ -16,14 +16,12 @@
                 // be sure to call into base method
                 this.base(value);
 
-                const textArea = this.control[0].querySelector("textarea");
+                const textArea = this._getTextArea();
                 if (!textArea) {
                     return;
                 }
                 textArea.value = value
-                
-                // trigger re-render
-                textArea.dispatchEvent(new Event("input"));
+                this._triggerRichTextEditorRender();
             },
 
             /**
@@ -31,11 +29,59 @@
              */
             getControlValue: function()
             {
-                const textArea = this.control[0].querySelector("textarea");
+                const textArea = this._getTextArea();
                 if (!textArea) {
                     return;
                 }
                 return textArea.value;
+            },
+
+            _getTextArea: function () {
+                if (!this.control || !this.control[0]) {
+                    return null;
+                }
+                return this.control[0].querySelector("textarea");
+            },
+
+            _triggerRichTextEditorRender: function () {
+                const textArea = this._getTextArea();
+                if (!textArea) {
+                    return;
+                }
+
+                textArea.dispatchEvent(new Event("input"));
+            },
+
+            _setRichTextEditorDisabledState: function (disabled) {
+                const textArea = this._getTextArea();
+                if (!textArea) {
+                    return;
+                }
+
+                textArea.disabled = disabled;
+                if (disabled) {
+                    textArea.setAttribute("data-rich-textbox-disabled", "true");
+                } else {
+                    textArea.removeAttribute("data-rich-textbox-disabled");
+                }
+
+                this._triggerRichTextEditorRender();
+            },
+
+            /**
+             * @see Alpaca.Fields.ControlField#disable
+             */
+            disable: function () {
+                this.base();
+                this._setRichTextEditorDisabledState(true);
+            },
+
+            /**
+             * @see Alpaca.Fields.ControlField#enable
+             */
+            enable: function () {
+                this.base();
+                this._setRichTextEditorDisabledState(false);
             },
 
             /* builder_helpers */
