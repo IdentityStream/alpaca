@@ -182,6 +182,10 @@
             }
             var additionalCriteria = [
                 { field: "DoraAssessmentClients", consequences: ["Customer"] },
+                { field: "DoraAssessmentDataLoss", consequences: [] },
+                { field: "DoraAssessmentReputation", consequences: [] },
+                { field: "DoraAssessmentDuration", consequences: [] },
+                { field: "DoraAssessmentGeographicalSpread", consequences: [] },
                 { field: "DoraAssessmentEconomicImpact", consequences: ["MonetaryValues"] },
             ];
             var numAdditionalCriteria = 0;
