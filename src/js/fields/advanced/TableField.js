@@ -316,14 +316,23 @@
                         self.off("ready");
                         self.on("ready", function() {
 
+                            // table dom element
+                            var table = self.getTableEl();
+
                             // tear down old data tables data if it is still around
                             if (self._dt) {
                                 self._dt.destroy();
                                 self._dt = undefined;
                             }
-
-                            // table dom element
-                            var table = self.getTableEl();
+                            else if ($.fn.DataTable.isDataTable(table)) {
+                                // the table DOM node can still carry a DataTables instance created by a
+                                // previous Alpaca field instance that was discarded without being torn down
+                                // (e.g. re-render across a create/edit <-> display view switch). Without this,
+                                // DataTable() below would silently reuse that stale instance - including its
+                                // old column count - instead of applying the current configuration, which
+                                // later throws inside DataTables when the column/header counts no longer match.
+                                $(table).DataTable().destroy();
+                            }
 
                             // data table reference
                             self._dt = $(table).DataTable(self.options.datatables);
