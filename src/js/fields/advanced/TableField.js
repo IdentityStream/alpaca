@@ -234,6 +234,24 @@
         },
 
         /**
+         * Tears down the underlying DataTables instance before the field is removed so that its
+         * retained rows are restored into this field's own table body while it is still in the DOM.
+         * View-switching code must call destroy() on the outgoing field before rendering its replacement.
+         *
+         * @see Alpaca.Field#destroy
+         */
+        destroy: function()
+        {
+            if (this._dt)
+            {
+                this._dt.destroy();
+                this._dt = undefined;
+            }
+
+            this.base();
+        },
+
+        /**
          * The table field uses the "array" container convention to render the DOM.  As such, nested objects are wrapped
          * in "field" elements that result in slightly incorrect table structures.  Part of the reason for this is that
          * browsers are very fussy when it comes to injection of nested TR or TD partials.  Here, we generate most
@@ -316,23 +334,14 @@
                         self.off("ready");
                         self.on("ready", function() {
 
-                            // table dom element
-                            var table = self.getTableEl();
-
                             // tear down old data tables data if it is still around
                             if (self._dt) {
                                 self._dt.destroy();
                                 self._dt = undefined;
                             }
-                            else if ($.fn.DataTable.isDataTable(table)) {
-                                // the table DOM node can still carry a DataTables instance created by a
-                                // previous Alpaca field instance that was discarded without being torn down
-                                // (e.g. re-render across a create/edit <-> display view switch). Without this,
-                                // DataTable() below would silently reuse that stale instance - including its
-                                // old column count - instead of applying the current configuration, which
-                                // later throws inside DataTables when the column/header counts no longer match.
-                                $(table).DataTable().destroy();
-                            }
+
+                            // table dom element
+                            var table = self.getTableEl();
 
                             // data table reference
                             self._dt = $(table).DataTable(self.options.datatables);
