@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+    <meta charset="UTF-8">
+    <title>impact-assessment - frittstående eksempel</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="../../build/alpaca/bootstrap/alpaca.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/handlebars@4.7.6/dist/handlebars.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+    <script src="../../build/alpaca/bootstrap/alpaca.js"></script>
+
+    <style>
+        body { padding: 30px; }
+        .container { max-width: 1100px; }
+        pre { background: #f7f7f7; padding: 10px; max-height: 260px; overflow: auto; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>impact-assessment</h1>
+    <p>Registrering av konsekvenser av bortfall over tid, som del av en forretningskonsekvensanalyse (BIA).</p>
+
+    <div id="impact-assessment-field"></div>
+
+    <button id="show-value-btn" class="btn btn-default" style="margin-top:15px;">Vis feltverdi (console + under)</button>
+    <pre id="value-output"></pre>
+
+    <h2>Vurderingskriterier (axis: "level")</h2>
+    <p>Kolonnene er konsekvensnivåene, og cellene viser kriteriene for hver kategori. Kriteriene kan endres i
+       redigeringsmodus; visningen under er skrivebeskyttet og oppdateres med knappen.</p>
+
+    <div id="impact-assessment-level-field"></div>
+
+    <button id="show-level-value-btn" class="btn btn-default" style="margin-top:15px;">Vis feltverdi og oppdater visning</button>
+    <pre id="level-value-output"></pre>
+
+    <div id="impact-assessment-level-display"></div>
+
+</div>
+
+<script>
+    // Configuration as defined by the spec (section 3). Any array order/ids/ranks/hours are data-driven;
+    // nothing here requires code changes to the impact-assessment component itself.
+    var impactAssessmentStandardConfig = {
+        id: "bia-standard",
+        version: 1,
+
+        categories: [
+            {
+                id: "financial",
+                label: "Økonomi",
+                description: "Økonomiske konsekvenser av bortfall.",
+                levelDescriptions: {
+                    none: "Ingen økonomisk konsekvens.",
+                    low: "Begrensede kostnader innen ordinære rammer.",
+                    medium: "Merkbare kostnader som krever ekstra tiltak.",
+                    high: "Store økonomiske tap.",
+                    critical: "Økonomiske tap som virksomheten ikke kan akseptere."
+                }
+            },
+            {
+                id: "delivery",
+                label: "Leveranser og kunder",
+                description: "Konsekvenser for avtalte leveranser.",
+                // this category uses its own scale instead of the shared config.levels
+                levels: [
+                    { id: "none", rank: 0, label: "Ingen", description: "Ingen påvirkning på leveranser." },
+                    { id: "delay", rank: 2, label: "Forsinkelse", description: "Avtalte leveranser forsinkes og krever ekstra tiltak." },
+                    { id: "high", rank: 3, label: "Leveransestopp", description: "Kritiske leveranser stopper og rammer kunder vesentlig.", color: "#f4a261" },
+                    { id: "critical", rank: 4, label: "Kontraktsbrudd", description: "Langvarig stopp med uakseptable konsekvenser.", color: "#c0392b" }
+                ],
+                unacceptableFromLevel: "high"
+            }
+        ],
+
+        durations: [
+            { id: "t2h", hours: 2, label: "Etter 2 timer" },
+            { id: "t8h", hours: 8, label: "Etter 8 timer" },
+            { id: "t24h", hours: 24, label: "Etter 24 timer" },
+            { id: "t72h", hours: 72, label: "Etter 3 døgn" }
+        ],
+
+        levels: [
+            { id: "none", rank: 0, label: "Ingen", description: "Ingen konsekvens." },
+            { id: "low", rank: 1, label: "Lav" },
+            { id: "medium", rank: 2, label: "Moderat", requireComment: true },
+            { id: "high", rank: 3, label: "Høy" },
+            { id: "critical", rank: 4, label: "Kritisk" }
+        ],
+
+        requireAllCells: true,
+        requireCommentFromLevel: "high",
+        unacceptableFromLevel: "critical",
+        warnOnDecreasingImpact: true
+    };
+
+    // Pre-filled data matching the impact-assessment field's config/data structure
+    var impactAssessmentStandardData = {
+        configId: "bia-standard",
+        configVersion: 1,
+        cells: {
+            financial: {
+                t2h: { status: "assessed", levelId: "low", comment: "" },
+                t8h: { status: "assessed", levelId: "high", comment: "Forsinket fakturering" },
+                t24h: { status: "assessed", levelId: "high", comment: "Betydelige forsinkelser i oppgjør" },
+                t72h: { status: "unassessed", levelId: null, comment: "" }
+            },
+            delivery: {
+                t2h: { status: "unassessed", levelId: null, comment: "" },
+                t8h: { status: "assessed", levelId: "delay", comment: "" },
+                t24h: { status: "assessed", levelId: "critical", comment: "Kritiske leveranser stopper helt" },
+                t72h: { status: "assessed", levelId: "high", comment: "Delvis gjenopprettet med manuelle rutiner" }
+            }
+        }
+    };
+
+    $(function() {
+        $("#impact-assessment-field").alpaca({
+            "view": { "parent": "bootstrap-edit", "locale": "nb_NO" },
+            "schema": {
+                "type": "impact-assessment",
+                "title": "Konsekvensanalyse"
+            },
+            "options": {
+                "type": "impact-assessment",
+                "label": "Konsekvensanalyse (BIA)",
+                "config": impactAssessmentStandardConfig
+            },
+            "data": impactAssessmentStandardData,
+            "postRender": function(control) {
+                $("#show-value-btn").on("click", function() {
+                    var value = control.getValue();
+                    console.log("impact-assessment value", value);
+                    $("#value-output").text(JSON.stringify(value, null, 2));
+                });
+            }
+        });
+
+        var criteriaConfig = {
+            id: "impact-simple",
+            version: 1,
+            axis: "level",
+            categories: [
+                { id: "life", label: "Liv og helse", levelDescriptions: { low: "Ubetydelige skader.", medium: "Alvorlige skader.", high: "Dødsfall." } },
+                { id: "financial", label: "Økonomi", levelDescriptions: { low: "Under 100 000 kr.", medium: "100 000 - 1 mill. kr.", high: "Over 1 mill. kr." } },
+                { id: "reputation", label: "Omdømme", description: "Tillit hos kunder og samfunn." }
+            ],
+            levels: [
+                { id: "low", rank: 1, label: "Lav", description: "Begrenset konsekvens." },
+                { id: "medium", rank: 2, label: "Middels", description: "Merkbar konsekvens." },
+                { id: "high", rank: 3, label: "Høy", description: "Alvorlig konsekvens." }
+            ]
+        };
+
+        var renderCriteriaView = function(value) {
+            $("#impact-assessment-level-display").empty().alpaca({
+                "view": { "parent": "bootstrap-display", "locale": "nb_NO" },
+                "options": { "type": "impact-assessment", "label": "Visning (skrivebeskyttet)", "config": criteriaConfig },
+                "data": value
+            });
+        };
+
+        $("#impact-assessment-level-field").alpaca({
+            "view": { "parent": "bootstrap-edit", "locale": "nb_NO" },
+            "options": {
+                "type": "impact-assessment",
+                "label": "Redigering",
+                "config": criteriaConfig
+            },
+            "postRender": function(control) {
+                renderCriteriaView(control.getValue());
+                $("#show-level-value-btn").on("click", function() {
+                    var value = control.getValue();
+                    $("#level-value-output").text(JSON.stringify(value, null, 2));
+                    renderCriteriaView(value);
+                });
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
