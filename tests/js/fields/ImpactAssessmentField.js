@@ -66,7 +66,7 @@
         return {
             configId: "bia-standard",
             configVersion: 1,
-            cells: {
+            assessments: {
                 financial: {
                     t2h: { status: "assessed", levelId: "low", comment: "" },
                     t8h: { status: "assessed", levelId: "high", comment: "Forsinket fakturering" },
@@ -87,7 +87,7 @@
         stop();
         addTarget("impact-assessment-1").alpaca({
             "options": {
-                "type": "impact-assessment",
+                "type": "ImpactAssessment",
                 "config": testConfig()
             },
             "data": testData(),
@@ -116,21 +116,21 @@
         stop();
         var config = testConfig();
         var data = testData();
-        data.cells.financial.t24h = { status: "assessed", levelId: "none", comment: "" };
-        data.cells.delivery.t8h = { status: "notApplicable", levelId: null, comment: "Gammel begrunnelse" };
+        data.assessments.financial.t24h = { status: "assessed", levelId: "none", comment: "" };
+        data.assessments.delivery.t8h = { status: "notApplicable", levelId: null, comment: "Gammel begrunnelse" };
 
         addTarget("impact-assessment-2").alpaca({
-            "options": { "type": "impact-assessment", "config": config },
+            "options": { "type": "ImpactAssessment", "config": config },
             "data": data,
             "postRender": function(control) {
                 expect(5);
 
                 var value = control.getValue();
-                equal(value.cells.delivery.t2h.status, "unassessed", "Untouched cell stays unassessed");
-                equal(value.cells.financial.t24h.status, "assessed", "Explicitly assessed-none cell is 'assessed'");
-                equal(value.cells.financial.t24h.levelId, "none", "Explicitly assessed-none cell keeps levelId 'none'");
-                equal(value.cells.delivery.t8h.status, "unassessed", "Legacy 'notApplicable' is no longer supported and becomes 'unassessed'");
-                equal(value.cells.delivery.t8h.comment, "Gammel begrunnelse", "The comment of a legacy 'notApplicable' cell is kept");
+                equal(value.assessments.delivery.t2h.status, "unassessed", "Untouched cell stays unassessed");
+                equal(value.assessments.financial.t24h.status, "assessed", "Explicitly assessed-none cell is 'assessed'");
+                equal(value.assessments.financial.t24h.levelId, "none", "Explicitly assessed-none cell keeps levelId 'none'");
+                equal(value.assessments.delivery.t8h.status, "unassessed", "Legacy 'notApplicable' is no longer supported and becomes 'unassessed'");
+                equal(value.assessments.delivery.t8h.comment, "Gammel begrunnelse", "The comment of a legacy 'notApplicable' cell is kept");
 
                 start();
             }
@@ -141,7 +141,7 @@
     test("Clicking a cell cycles its level, updates the field value and triggers events", function() {
         stop();
         addTarget("impact-assessment-3").alpaca({
-            "options": { "type": "impact-assessment", "config": testConfig() },
+            "options": { "type": "ImpactAssessment", "config": testConfig() },
             "data": testData(),
             "postRender": function(control) {
                 expect(6);
@@ -154,17 +154,17 @@
                 clickToggle("impact-assessment-3", "delivery", "t2h");
 
                 var value = control.getValue();
-                equal(value.cells.delivery.t2h.status, "assessed", "Status becomes 'assessed' after clicking");
-                equal(value.cells.delivery.t2h.levelId, "low", "Two clicks from unassessed land on the second level");
+                equal(value.assessments.delivery.t2h.status, "assessed", "Status becomes 'assessed' after clicking");
+                equal(value.assessments.delivery.t2h.levelId, "low", "Two clicks from unassessed land on the second level");
                 equal(toggleButton("impact-assessment-3", "delivery", "t2h").text().trim(), "Lav", "Cell label follows the level");
                 ok(changeFired, "'change' event propagated through the field element");
 
                 // shift+click goes backwards: low -> none -> unassessed -> highest level (wraps)
                 clickToggle("impact-assessment-3", "delivery", "t2h", true);
                 clickToggle("impact-assessment-3", "delivery", "t2h", true);
-                equal(control.getValue().cells.delivery.t2h.status, "unassessed", "Shift+click steps back to unassessed");
+                equal(control.getValue().assessments.delivery.t2h.status, "unassessed", "Shift+click steps back to unassessed");
                 clickToggle("impact-assessment-3", "delivery", "t2h", true);
-                equal(control.getValue().cells.delivery.t2h.levelId, "critical", "Cycle wraps around to the highest level");
+                equal(control.getValue().assessments.delivery.t2h.levelId, "critical", "Cycle wraps around to the highest level");
 
                 start();
             }
@@ -175,7 +175,7 @@
     test("Help text uses category-specific description, falling back to the level description", function() {
         stop();
         addTarget("impact-assessment-4").alpaca({
-            "options": { "type": "impact-assessment", "config": testConfig() },
+            "options": { "type": "ImpactAssessment", "config": testConfig() },
             "data": testData(),
             "postRender": function(control) {
                 expect(2);
@@ -198,7 +198,7 @@
     test("Validation requires a comment from the configured level", function() {
         stop();
         addTarget("impact-assessment-5").alpaca({
-            "options": { "type": "impact-assessment", "config": testConfig() },
+            "options": { "type": "ImpactAssessment", "config": testConfig() },
             "data": testData(),
             "postRender": function(control) {
                 expect(2);
@@ -210,7 +210,7 @@
                 ok(!control.isValid(), "Field is invalid while a cell is still unassessed (requireAllCells)");
 
                 var data = control.getValue();
-                data.cells.financial.t24h = { status: "assessed", levelId: "none", comment: "" };
+                data.assessments.financial.t24h = { status: "assessed", levelId: "none", comment: "" };
                 control.setValue(data);
 
                 // now remove the required comment from the high-level cell
@@ -234,7 +234,7 @@
 
         var errorSeen = false;
         addTarget("impact-assessment-6").alpaca({
-            "options": { "type": "impact-assessment", "config": badConfig },
+            "options": { "type": "ImpactAssessment", "config": badConfig },
             "data": testData(),
             "error": function(err) {
                 errorSeen = true;
@@ -263,7 +263,7 @@
         var errorSeen = false;
 
         addTarget("impact-assessment-6b").alpaca({
-            "options": { "type": "impact-assessment" },
+            "options": { "type": "ImpactAssessment" },
             "error": function() { errorSeen = true; },
             "postRender": function(control) {
                 expect(2);
@@ -281,7 +281,7 @@
         var errorSeen = false;
 
         addTarget("impact-assessment-6c").alpaca({
-            "options": { "type": "impact-assessment", "config": "   " },
+            "options": { "type": "ImpactAssessment", "config": "   " },
             "error": function() { errorSeen = true; },
             "postRender": function(control) {
                 expect(2);
@@ -298,7 +298,7 @@
         stop();
 
         addTarget("impact-assessment-6d").alpaca({
-            "options": { "type": "impact-assessment" },
+            "options": { "type": "ImpactAssessment" },
             "postRender": function(control) {
                 var exampleConfig = control.getSchemaOfOptions().properties.config["default"];
                 var buildResult = control._buildConfig(exampleConfig);
@@ -318,7 +318,7 @@
         mismatchedData.configVersion = 2;
 
         addTarget("impact-assessment-7").alpaca({
-            "options": { "type": "impact-assessment", "config": testConfig() },
+            "options": { "type": "ImpactAssessment", "config": testConfig() },
             "data": mismatchedData,
             "postRender": function(control) {
                 expect(3);
@@ -340,10 +340,10 @@
         config.categories[0].description = "<script>window.__xss = true;<" + "/script>";
 
         var data = testData();
-        data.cells.financial.t2h.comment = "<b>bold</b>";
+        data.assessments.financial.t2h.comment = "<b>bold</b>";
 
         addTarget("impact-assessment-8").alpaca({
-            "options": { "type": "impact-assessment", "config": config },
+            "options": { "type": "ImpactAssessment", "config": config },
             "data": data,
             "postRender": function(control) {
                 expect(4);
@@ -368,11 +368,11 @@
     test("Multiple impact-assessment instances on the same page do not collide, and destroy() unbinds events", function() {
         stop();
         addTarget("impact-assessment-9a").alpaca({
-            "options": { "type": "impact-assessment", "config": testConfig() },
+            "options": { "type": "ImpactAssessment", "config": testConfig() },
             "data": testData(),
             "postRender": function(controlA) {
                 addTarget("impact-assessment-9b").alpaca({
-                    "options": { "type": "impact-assessment", "config": testConfig() },
+                    "options": { "type": "ImpactAssessment", "config": testConfig() },
                     "data": testData(),
                     "postRender": function(controlB) {
                         expect(3);
@@ -380,14 +380,14 @@
                         // A: financial/t2h low -> high
                         clickToggle("impact-assessment-9a", "financial", "t2h");
 
-                        notEqual(controlA.getValue().cells.financial.t2h.levelId, controlB.getValue().cells.financial.t2h.levelId,
+                        notEqual(controlA.getValue().assessments.financial.t2h.levelId, controlB.getValue().assessments.financial.t2h.levelId,
                             "Editing instance A does not affect instance B's value");
 
                         controlA.destroy();
                         ok($("#impact-assessment-9a .alpaca-impact-assessment").length === 0, "destroy() removes instance A's DOM");
 
                         clickToggle("impact-assessment-9b", "financial", "t2h");
-                        equal(controlB.getValue().cells.financial.t2h.levelId, "high", "Instance B keeps working after instance A is destroyed");
+                        equal(controlB.getValue().assessments.financial.t2h.levelId, "high", "Instance B keeps working after instance A is destroyed");
 
                         start();
                     }
@@ -401,7 +401,7 @@
         stop();
         addTarget("impact-assessment-10").alpaca({
             "view": "bootstrap-display",
-            "options": { "type": "impact-assessment", "config": testConfig() },
+            "options": { "type": "ImpactAssessment", "config": testConfig() },
             "data": testData(),
             "postRender": function(control) {
                 expect(2);
@@ -422,7 +422,7 @@
         config.colors = { unassessed: "#fafafa" };
 
         addTarget("impact-assessment-11").alpaca({
-            "options": { "type": "impact-assessment", "config": config },
+            "options": { "type": "ImpactAssessment", "config": config },
             "data": testData(),
             "postRender": function(control) {
                 expect(4);
@@ -444,7 +444,7 @@
     test("Comment indicator reflects missing/present comment and opens the comment panel", function() {
         stop();
         addTarget("impact-assessment-13").alpaca({
-            "options": { "type": "impact-assessment", "config": testConfig() },
+            "options": { "type": "ImpactAssessment", "config": testConfig() },
             "data": testData(),
             "postRender": function(control) {
                 expect(11);
@@ -489,24 +489,24 @@
         config.categories[1].requireCommentFromLevel = "major";
 
         var data = testData();
-        data.cells.delivery = {
+        data.assessments.delivery = {
             t2h: { status: "assessed", levelId: "minor", comment: "" },
             t8h: { status: "assessed", levelId: "high", comment: "" }, // not part of delivery's scale -> reset
             t24h: { status: "assessed", levelId: "major", comment: "" }
         };
 
         addTarget("impact-assessment-14").alpaca({
-            "options": { "type": "impact-assessment", "config": config },
+            "options": { "type": "ImpactAssessment", "config": config },
             "data": data,
             "postRender": function(control) {
                 expect(5);
 
                 var value = control.getValue();
-                equal(value.cells.delivery.t2h.levelId, "minor", "Category-specific level is accepted");
-                equal(value.cells.delivery.t8h.status, "unassessed", "A level from another scale is not accepted for the category");
+                equal(value.assessments.delivery.t2h.levelId, "minor", "Category-specific level is accepted");
+                equal(value.assessments.delivery.t8h.status, "unassessed", "A level from another scale is not accepted for the category");
 
                 clickToggle("impact-assessment-14", "delivery", "t2h");
-                equal(control.getValue().cells.delivery.t2h.levelId, "major", "Cycling uses the category's own levels");
+                equal(control.getValue().assessments.delivery.t2h.levelId, "major", "Cycling uses the category's own levels");
 
                 equal(toggleButton("impact-assessment-14", "delivery", "t24h").closest("td").attr("data-comment-state"), "missing",
                     "Category-specific requireCommentFromLevel is applied");
@@ -528,7 +528,7 @@
 
         var errorSeen = false;
         addTarget("impact-assessment-15").alpaca({
-            "options": { "type": "impact-assessment", "config": config },
+            "options": { "type": "ImpactAssessment", "config": config },
             "error": function() { errorSeen = true; }
         });
 
@@ -542,7 +542,7 @@
     test("Comment text is shown in the cell while the editor is closed", function() {
         stop();
         addTarget("impact-assessment-16").alpaca({
-            "options": { "type": "impact-assessment", "config": testConfig() },
+            "options": { "type": "ImpactAssessment", "config": testConfig() },
             "data": testData(),
             "postRender": function(control) {
                 expect(5);
@@ -576,7 +576,7 @@
                 "locale": "nb_NO",
                 "messages": { "nb_NO": { "impactAssessmentCategoryHeader": "Kategori" } }
             },
-            "options": { "type": "impact-assessment", "config": testConfig() },
+            "options": { "type": "ImpactAssessment", "config": testConfig() },
             "data": testData(),
             "postRender": function(control) {
                 expect(2);
@@ -596,11 +596,11 @@
         config.levels[3].requireComment = false; // critical: not required even though above the threshold
 
         var data = testData();
-        data.cells.financial.t24h = { status: "assessed", levelId: "critical", comment: "" };
-        data.cells.financial.t8h.comment = "";
+        data.assessments.financial.t24h = { status: "assessed", levelId: "critical", comment: "" };
+        data.assessments.financial.t8h.comment = "";
 
         addTarget("impact-assessment-18").alpaca({
-            "options": { "type": "impact-assessment", "config": config },
+            "options": { "type": "ImpactAssessment", "config": config },
             "data": data,
             "postRender": function(control) {
                 expect(3);
@@ -642,7 +642,7 @@
     test("axis 'level': editable criteria matrix with levels as columns, colored by level", function() {
         stop();
         addTarget("impact-assessment-19").alpaca({
-            "options": { "type": "impact-assessment", "config": levelAxisConfig() },
+            "options": { "type": "ImpactAssessment", "config": levelAxisConfig() },
             "data": { configId: "impact-simple", configVersion: 1, criteria: { financial: { high: "Lagret tekst" } } },
             "postRender": function(control) {
                 expect(11);
@@ -679,7 +679,7 @@
         stop();
         addTarget("impact-assessment-21").alpaca({
             "view": "bootstrap-display",
-            "options": { "type": "impact-assessment", "config": levelAxisConfig() },
+            "options": { "type": "ImpactAssessment", "config": levelAxisConfig() },
             "data": { configId: "impact-simple", configVersion: 1, criteria: { financial: { high: "Lagret tekst" } } },
             "postRender": function(control) {
                 expect(3);
@@ -701,7 +701,7 @@
 
         var errorSeen = false;
         addTarget("impact-assessment-20").alpaca({
-            "options": { "type": "impact-assessment", "config": config },
+            "options": { "type": "ImpactAssessment", "config": config },
             "error": function() { errorSeen = true; }
         });
 
@@ -719,7 +719,7 @@
 
         var errorSeen = false;
         addTarget("impact-assessment-12").alpaca({
-            "options": { "type": "impact-assessment", "config": config },
+            "options": { "type": "ImpactAssessment", "config": config },
             "data": testData(),
             "error": function() { errorSeen = true; }
         });

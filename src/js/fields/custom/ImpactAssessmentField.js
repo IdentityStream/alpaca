@@ -126,7 +126,7 @@
          */
         getFieldType: function()
         {
-            return "impact-assessment";
+            return "ImpactAssessment";
         },
 
         /**
@@ -172,7 +172,7 @@
                 // Alpaca keeps rendering after the error callback, so the field must still survive without a config
                 this.config = null;
                 this._configError = this._msg("impactAssessmentInvalidConfig", [configResult.error]);
-                return Alpaca.throwErrorWithCallback("impact-assessment: invalid configuration - " + configResult.error, this.errorCallback);
+                return Alpaca.throwErrorWithCallback("ImpactAssessment: invalid configuration - " + configResult.error, this.errorCallback);
             }
             this._configError = null;
             this.config = configResult.config;
@@ -494,7 +494,7 @@
         // Value handling
         // ------------------------------------------------------------------------------------------------
 
-        _emptyCell: function()
+        _emptyAssessment: function()
         {
             return { status: STATUS_UNASSESSED, levelId: null, comment: "" };
         },
@@ -530,39 +530,39 @@
                 }
             }
 
-            var cells = {};
-            var sourceCells = (source.cells && Alpaca.isObject(source.cells)) ? source.cells : {};
+            var assessments = {};
+            var sourceAssessments = (source.assessments && Alpaca.isObject(source.assessments)) ? source.assessments : {};
 
             this.config.categories.forEach(function(category)
             {
-                cells[category.id] = {};
-                var sourceCategoryCells = (sourceCells[category.id] && Alpaca.isObject(sourceCells[category.id])) ? sourceCells[category.id] : {};
+                assessments[category.id] = {};
+                var sourceCategoryAssessments = (sourceAssessments[category.id] && Alpaca.isObject(sourceAssessments[category.id])) ? sourceAssessments[category.id] : {};
 
                 self.config.durations.forEach(function(duration)
                 {
-                    var sourceCell = sourceCategoryCells[duration.id];
-                    var cell = self._emptyCell();
+                    var sourceAssessment = sourceCategoryAssessments[duration.id];
+                    var assessment = self._emptyAssessment();
 
-                    if (sourceCell && Alpaca.isObject(sourceCell))
+                    if (sourceAssessment && Alpaca.isObject(sourceAssessment))
                     {
-                        if (sourceCell.status === STATUS_ASSESSED && isSafeId(sourceCell.levelId) && category.levelsById.hasOwnProperty(sourceCell.levelId))
+                        if (sourceAssessment.status === STATUS_ASSESSED && isSafeId(sourceAssessment.levelId) && category.levelsById.hasOwnProperty(sourceAssessment.levelId))
                         {
-                            cell.status = STATUS_ASSESSED;
-                            cell.levelId = sourceCell.levelId;
+                            assessment.status = STATUS_ASSESSED;
+                            assessment.levelId = sourceAssessment.levelId;
                         }
                         else
                         {
-                            cell.status = STATUS_UNASSESSED;
-                            cell.levelId = null;
+                            assessment.status = STATUS_UNASSESSED;
+                            assessment.levelId = null;
                         }
 
-                        if (Alpaca.isString(sourceCell.comment))
+                        if (Alpaca.isString(sourceAssessment.comment))
                         {
-                            cell.comment = sourceCell.comment;
+                            assessment.comment = sourceAssessment.comment;
                         }
                     }
 
-                    cells[category.id][duration.id] = cell;
+                    assessments[category.id][duration.id] = assessment;
                 });
             });
 
@@ -580,7 +580,7 @@
             return {
                 configId: this.config.id,
                 configVersion: this.config.version,
-                cells: cells
+                assessments: assessments
             };
         },
 
@@ -756,7 +756,7 @@
 
         _buildCellModel: function(category, duration, fieldId)
         {
-            var cell = this.data.cells[category.id][duration.id];
+            var cell = this.data.assessments[category.id][duration.id];
             var baseId = fieldId + "-cell-" + category.id + "-" + duration.id;
             var commentState = this._commentState(category, cell);
 
@@ -958,7 +958,7 @@
                 var categoryId = $textarea.attr("data-category-id");
                 var durationId = $textarea.attr("data-duration-id");
 
-                self.data.cells[categoryId][durationId].comment = $textarea.val();
+                self.data.assessments[categoryId][durationId].comment = $textarea.val();
 
                 self._afterCellChange(categoryId, durationId, true);
             });
@@ -1010,7 +1010,7 @@
             var category = this.config.categoriesById[categoryId];
             if (levelId !== null && !category.levelsById.hasOwnProperty(levelId)) { return; }
 
-            var cell = this.data.cells[categoryId][durationId];
+            var cell = this.data.assessments[categoryId][durationId];
             cell.status = levelId === null ? STATUS_UNASSESSED : STATUS_ASSESSED;
             cell.levelId = levelId;
 
@@ -1025,7 +1025,7 @@
         {
             if (!this.config.categoriesById.hasOwnProperty(categoryId) || !this.config.durationsById.hasOwnProperty(durationId)) { return; }
 
-            var cell = this.data.cells[categoryId][durationId];
+            var cell = this.data.assessments[categoryId][durationId];
 
             var states = [{ status: STATUS_UNASSESSED, levelId: null }];
             this.config.categoriesById[categoryId].levels.forEach(function(level)
@@ -1050,7 +1050,7 @@
         {
             var category = this.config.categoriesById[categoryId];
             var duration = this.config.durationsById[durationId];
-            var cell = this.data.cells[categoryId][durationId];
+            var cell = this.data.assessments[categoryId][durationId];
 
             this._updateCellHelpAndState(category, duration, cell);
             this._updateSummary();
@@ -1124,7 +1124,7 @@
             {
                 self.config.durations.forEach(function(duration)
                 {
-                    var cell = self.data.cells[category.id][duration.id];
+                    var cell = self.data.assessments[category.id][duration.id];
                     var $cell = self._findCellEl(category.id, duration.id);
                     if (!$cell || !$cell.length) { return; }
 
@@ -1174,7 +1174,7 @@
 
                 self.config.durations.forEach(function(duration)
                 {
-                    var cell = self.data.cells[category.id][duration.id];
+                    var cell = self.data.assessments[category.id][duration.id];
 
                     if (firstUnacceptable) { return; }
 
@@ -1220,7 +1220,7 @@
 
                 self.config.durations.forEach(function(duration)
                 {
-                    var cell = self.data.cells[category.id][duration.id];
+                    var cell = self.data.assessments[category.id][duration.id];
 
                     if (cell.status !== STATUS_ASSESSED || !cell.levelId) { return; }
 
@@ -1356,7 +1356,7 @@
                 self.config.durations.forEach(function(duration)
                 {
                     var key = "impactAssessmentCell_" + category.id + "_" + duration.id;
-                    var cell = self.data.cells[category.id][duration.id];
+                    var cell = self.data.assessments[category.id][duration.id];
                     var status = true;
                     var message = "";
                     var notAssessed = false;
@@ -1517,7 +1517,7 @@
         }
     });
 
-    Alpaca.registerFieldClass("impact-assessment", Alpaca.Fields.ImpactAssessmentField);
+    Alpaca.registerFieldClass("ImpactAssessment", Alpaca.Fields.ImpactAssessmentField);
 
     // Default (English) texts. Translate per locale in src/js/messages/i18n/*.js, or override via view "messages".
     Alpaca.registerMessages({

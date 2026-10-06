@@ -100,11 +100,11 @@
         warnOnDecreasingImpact: true
     };
 
-    // Pre-filled data matching the impact-assessment field's config/data structure
+    // Pre-filled data matching the ImpactAssessment field's config/data structure
     var impactAssessmentStandardData = {
         configId: "bia-standard",
         configVersion: 1,
-        cells: {
+        assessments: {
             financial: {
                 t2h: { status: "assessed", levelId: "low", comment: "" },
                 t8h: { status: "assessed", levelId: "high", comment: "Forsinket fakturering" },
@@ -124,11 +124,11 @@
         $("#impact-assessment-field").alpaca({
             "view": { "parent": "bootstrap-edit", "locale": "nb_NO" },
             "schema": {
-                "type": "impact-assessment",
+                "type": "ImpactAssessment",
                 "title": "Konsekvensanalyse"
             },
             "options": {
-                "type": "impact-assessment",
+                "type": "ImpactAssessment",
                 "label": "Konsekvensanalyse (BIA)",
                 "config": impactAssessmentStandardConfig
             },
@@ -161,7 +161,7 @@
         var renderCriteriaView = function(value) {
             $("#impact-assessment-level-display").empty().alpaca({
                 "view": { "parent": "bootstrap-display", "locale": "nb_NO" },
-                "options": { "type": "impact-assessment", "label": "Visning (skrivebeskyttet)", "config": criteriaConfig },
+                "options": { "type": "ImpactAssessment", "label": "Visning (skrivebeskyttet)", "config": criteriaConfig },
                 "data": value
             });
         };
@@ -169,7 +169,7 @@
         $("#impact-assessment-level-field").alpaca({
             "view": { "parent": "bootstrap-edit", "locale": "nb_NO" },
             "options": {
-                "type": "impact-assessment",
+                "type": "ImpactAssessment",
                 "label": "Redigering",
                 "config": criteriaConfig
             },
