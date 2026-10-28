@@ -31,83 +31,14 @@
     var AXIS_DURATION = "duration";
     var AXIS_LEVEL = "level";
 
-    var FORBIDDEN_KEYS = {
-        "__proto__": true,
-        "constructor": true,
-        "prototype": true
-    };
-
-    // conservative "safe" identifier: starts with a letter, then letters/digits/_/-, no "__" prefix
-    var ID_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
-
-    var isSafeId = function(id)
-    {
-        return Alpaca.isString(id) && id.length > 0 && id.length <= 64 &&
-            ID_PATTERN.test(id) &&
-            id.indexOf("__") !== 0 &&
-            !FORBIDDEN_KEYS.hasOwnProperty(id);
-    };
-
-    // only hex colors are accepted, since the value ends up in an inline style attribute
-    var COLOR_PATTERN = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+    var Support = Alpaca.AssessmentSupport;
+    var hasOwn = Support.hasOwn;
+    var isSafeId = Support.isSafeId;
+    var createMap = Support.createMap;
+    var contrastTextColor = Support.contrastTextColor;
+    var escapeHtml = Support.escapeHtml;
 
     var DEFAULT_UNASSESSED_COLOR = "#ffffff";
-
-    // green -> yellow -> red, interpolated over the configured levels in rank order
-    var DEFAULT_PALETTE_STOPS = [[99, 190, 123], [255, 235, 132], [248, 105, 107]];
-
-    var toHex = function(rgb)
-    {
-        return "#" + rgb.map(function(c)
-        {
-            var h = Math.round(c).toString(16);
-            return h.length === 1 ? "0" + h : h;
-        }).join("");
-    };
-
-    var defaultLevelColor = function(index, count)
-    {
-        if (count <= 1) { return toHex(DEFAULT_PALETTE_STOPS[0]); }
-
-        var scaled = (index / (count - 1)) * (DEFAULT_PALETTE_STOPS.length - 1);
-        var i = Math.min(DEFAULT_PALETTE_STOPS.length - 2, Math.floor(scaled));
-        var f = scaled - i;
-        var from = DEFAULT_PALETTE_STOPS[i];
-        var to = DEFAULT_PALETTE_STOPS[i + 1];
-
-        return toHex([0, 1, 2].map(function(c) { return from[c] + (to[c] - from[c]) * f; }));
-    };
-
-    var parseHex = function(hex)
-    {
-        var h = hex.substring(1);
-        if (h.length === 3) { h = h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2); }
-        return [parseInt(h.substring(0, 2), 16), parseInt(h.substring(2, 4), 16), parseInt(h.substring(4, 6), 16)];
-    };
-
-    // picks black or white text, whichever gives the higher WCAG contrast ratio against the background
-    var contrastTextColor = function(hex)
-    {
-        var lum = parseHex(hex).map(function(c)
-        {
-            c = c / 255;
-            return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-        });
-        var l = 0.2126 * lum[0] + 0.7152 * lum[1] + 0.0722 * lum[2];
-
-        return (l + 0.05) / 0.05 >= 1.05 / (l + 0.05) ? "#222222" : "#ffffff";
-    };
-
-    // Alpaca's message.html renders validation messages unescaped ({{{message}}}), so anything we put there must be escaped
-    var escapeHtml = function(text)
-    {
-        return String(text)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
-    };
 
     var escapeSelector = function(id)
     {
@@ -202,20 +133,17 @@
             var raw;
             try
             {
-                raw = JSON.parse(JSON.stringify(rawConfig));
+                raw = Support.cloneJson(rawConfig);
             }
             catch (e)
             {
                 return { error: "options.config could not be cloned (must be plain JSON-serializable data)" };
             }
 
-            if (!isSafeId(raw.id))
+            var identityError = Support.validateConfigIdentity(raw);
+            if (identityError)
             {
-                return { error: "config.id is required and must be a safe identifier" };
-            }
-            if (!Alpaca.isNumber(raw.version) || raw.version < 1)
-            {
-                return { error: "config.version is required and must be a positive number" };
+                return { error: identityError };
             }
 
             var axis = Alpaca.isEmpty(raw.axis) ? AXIS_DURATION : raw.axis;
@@ -230,10 +158,10 @@
             }
 
             // ---- global levels (optional when every category defines its own) ----
-            var globalLevels = { levels: [], levelsById: {} };
+            var globalLevels = { levels: [], levelsById: createMap() };
             if (!Alpaca.isEmpty(raw.levels))
             {
-                globalLevels = this._parseLevels(raw.levels, "config.levels");
+                globalLevels = Support.parseScale(raw.levels, "config.levels");
                 if (globalLevels.error) { return globalLevels; }
             }
 
@@ -243,7 +171,7 @@
                 return { error: "config.categories must be a non-empty array" };
             }
             var categories = [];
-            var categoriesById = {};
+            var categoriesById = createMap();
             var hasCategoryLevels = false;
             for (var ci = 0; ci < raw.categories.length; ci++)
             {
@@ -252,7 +180,7 @@
                 {
                     return { error: "every category requires a safe, unique id" };
                 }
-                if (categoriesById.hasOwnProperty(rawCat.id))
+                if (hasOwn(categoriesById, rawCat.id))
                 {
                     return { error: "duplicate category id: " + rawCat.id };
                 }
@@ -269,7 +197,7 @@
                     {
                         return { error: "category '" + rawCat.id + "' cannot define its own levels when axis is '" + AXIS_LEVEL + "'" };
                     }
-                    catLevels = this._parseLevels(rawCat.levels, "category '" + rawCat.id + "' levels");
+                    catLevels = Support.parseScale(rawCat.levels, "category '" + rawCat.id + "' levels");
                     if (catLevels.error) { return catLevels; }
                     hasCategoryLevels = true;
                 }
@@ -278,12 +206,12 @@
                     return { error: "category '" + rawCat.id + "' has no levels and config.levels is not defined" };
                 }
 
-                var levelDescriptions = {};
+                var levelDescriptions = createMap();
                 if (rawCat.levelDescriptions && Alpaca.isObject(rawCat.levelDescriptions))
                 {
                     for (var ldKey in rawCat.levelDescriptions)
                     {
-                        if (rawCat.levelDescriptions.hasOwnProperty(ldKey) && isSafeId(ldKey))
+                        if (hasOwn(rawCat.levelDescriptions, ldKey) && isSafeId(ldKey))
                         {
                             levelDescriptions[ldKey] = String(rawCat.levelDescriptions[ldKey]);
                         }
@@ -313,8 +241,8 @@
 
             // ---- durations (not used with axis "level", which only displays the assessment criteria) ----
             var durations = [];
-            var durationsById = {};
-            var seenHours = {};
+            var durationsById = createMap();
+            var seenHours = createMap();
             if (!levelAxis && (!Alpaca.isArray(raw.durations) || raw.durations.length === 0))
             {
                 return { error: "config.durations must be a non-empty array" };
@@ -326,7 +254,7 @@
                 {
                     return { error: "every duration requires a safe, unique id" };
                 }
-                if (durationsById.hasOwnProperty(rawDur.id))
+                if (hasOwn(durationsById, rawDur.id))
                 {
                     return { error: "duplicate duration id: " + rawDur.id };
                 }
@@ -334,7 +262,7 @@
                 {
                     return { error: "duration '" + rawDur.id + "' requires a positive numeric 'hours' value" };
                 }
-                if (seenHours.hasOwnProperty(rawDur.hours))
+                if (hasOwn(seenHours, rawDur.hours))
                 {
                     return { error: "duplicate duration 'hours' value: " + rawDur.hours };
                 }
@@ -357,12 +285,12 @@
             var stateColorDefaults = { unassessed: DEFAULT_UNASSESSED_COLOR };
             for (var stateKey in stateColorDefaults)
             {
-                if (!stateColorDefaults.hasOwnProperty(stateKey)) { continue; }
+                if (!hasOwn(stateColorDefaults, stateKey)) { continue; }
                 if (Alpaca.isEmpty(rawColors[stateKey]))
                 {
                     stateColors[stateKey] = stateColorDefaults[stateKey];
                 }
-                else if (Alpaca.isString(rawColors[stateKey]) && COLOR_PATTERN.test(rawColors[stateKey]))
+                else if (Support.isColor(rawColors[stateKey]))
                 {
                     stateColors[stateKey] = rawColors[stateKey];
                 }
@@ -396,69 +324,6 @@
             return { config: config };
         },
 
-        _parseLevels: function(rawLevels, context)
-        {
-            if (!Alpaca.isArray(rawLevels) || rawLevels.length === 0)
-            {
-                return { error: context + " must be a non-empty array" };
-            }
-
-            var levels = [];
-            var levelsById = {};
-            var seenRanks = {};
-            for (var li = 0; li < rawLevels.length; li++)
-            {
-                var rawLevel = rawLevels[li];
-                if (!rawLevel || !isSafeId(rawLevel.id))
-                {
-                    return { error: context + ": every level requires a safe, unique id" };
-                }
-                if (levelsById.hasOwnProperty(rawLevel.id))
-                {
-                    return { error: context + ": duplicate level id: " + rawLevel.id };
-                }
-                if (!Alpaca.isNumber(rawLevel.rank))
-                {
-                    return { error: context + ": level '" + rawLevel.id + "' requires a numeric 'rank'" };
-                }
-                if (seenRanks.hasOwnProperty(rawLevel.rank))
-                {
-                    return { error: context + ": duplicate level rank: " + rawLevel.rank };
-                }
-                seenRanks[rawLevel.rank] = true;
-                if (!Alpaca.isString(rawLevel.label) || rawLevel.label.length === 0)
-                {
-                    return { error: context + ": level '" + rawLevel.id + "' requires a label" };
-                }
-                if (!Alpaca.isEmpty(rawLevel.color) && !(Alpaca.isString(rawLevel.color) && COLOR_PATTERN.test(rawLevel.color)))
-                {
-                    return { error: context + ": level '" + rawLevel.id + "' has an invalid color (use hex, e.g. #ff0000)" };
-                }
-                if (!Alpaca.isEmpty(rawLevel.requireComment) && !Alpaca.isBoolean(rawLevel.requireComment))
-                {
-                    return { error: context + ": level '" + rawLevel.id + "' has a non-boolean 'requireComment'" };
-                }
-
-                var level = {
-                    id: rawLevel.id,
-                    rank: rawLevel.rank,
-                    label: rawLevel.label,
-                    description: Alpaca.isString(rawLevel.description) ? rawLevel.description : "",
-                    color: Alpaca.isEmpty(rawLevel.color) ? null : rawLevel.color,
-                    requireComment: Alpaca.isBoolean(rawLevel.requireComment) ? rawLevel.requireComment : null
-                };
-                levels.push(level);
-                levelsById[level.id] = level;
-            }
-            levels.sort(function(a, b) { return a.rank - b.rank; });
-            levels.forEach(function(lvl, index)
-            {
-                if (!lvl.color) { lvl.color = defaultLevelColor(index, levels.length); }
-            });
-
-            return { levels: levels, levelsById: levelsById };
-        },
-
         /**
          * Resolves a threshold rule (category override, else global) to a rank. The level id is looked up in
          * the category's own levels first, then in the global levels, so a global rule can apply to
@@ -472,11 +337,11 @@
                 return { rank: null };
             }
 
-            if (Alpaca.isString(levelId) && category.levelsById.hasOwnProperty(levelId))
+            if (Alpaca.isString(levelId) && hasOwn(category.levelsById, levelId))
             {
                 return { rank: category.levelsById[levelId].rank };
             }
-            if (Alpaca.isString(levelId) && globalLevels.levelsById.hasOwnProperty(levelId))
+            if (Alpaca.isString(levelId) && hasOwn(globalLevels.levelsById, levelId))
             {
                 return { rank: globalLevels.levelsById[levelId].rank };
             }
@@ -501,7 +366,7 @@
 
         _cloneValue: function(value)
         {
-            return JSON.parse(JSON.stringify(value));
+            return Support.cloneJson(value);
         },
 
         /**
@@ -517,17 +382,14 @@
 
             var source = (raw && Alpaca.isObject(raw)) ? raw : {};
 
-            if (!Alpaca.isEmpty(source.configId) || !Alpaca.isEmpty(source.configVersion))
+            if (Support.isConfigMismatch(source, this.config))
             {
-                if (source.configId !== this.config.id || source.configVersion !== this.config.version)
-                {
-                    this._versionError = this._msg("impactAssessmentVersionMismatch", [source.configId, source.configVersion, this.config.id, this.config.version]);
+                this._versionError = this._msg("impactAssessmentVersionMismatch", [source.configId, source.configVersion, this.config.id, this.config.version]);
 
-                    // do not reshape data we don't understand - hand it back unchanged on getValue()
-                    this._rawIncompatibleValue = this._cloneValue(source);
+                // do not reshape data we don't understand - hand it back unchanged on getValue()
+                this._rawIncompatibleValue = this._cloneValue(source);
 
-                    return source;
-                }
+                return source;
             }
 
             var assessments = {};
@@ -536,16 +398,16 @@
             this.config.categories.forEach(function(category)
             {
                 assessments[category.id] = {};
-                var sourceCategoryAssessments = (sourceAssessments[category.id] && Alpaca.isObject(sourceAssessments[category.id])) ? sourceAssessments[category.id] : {};
+                var sourceCategoryAssessments = (hasOwn(sourceAssessments, category.id) && Alpaca.isObject(sourceAssessments[category.id])) ? sourceAssessments[category.id] : {};
 
                 self.config.durations.forEach(function(duration)
                 {
-                    var sourceAssessment = sourceCategoryAssessments[duration.id];
+                    var sourceAssessment = hasOwn(sourceCategoryAssessments, duration.id) ? sourceCategoryAssessments[duration.id] : null;
                     var assessment = self._emptyAssessment();
 
                     if (sourceAssessment && Alpaca.isObject(sourceAssessment))
                     {
-                        if (sourceAssessment.status === STATUS_ASSESSED && isSafeId(sourceAssessment.levelId) && category.levelsById.hasOwnProperty(sourceAssessment.levelId))
+                        if (sourceAssessment.status === STATUS_ASSESSED && isSafeId(sourceAssessment.levelId) && hasOwn(category.levelsById, sourceAssessment.levelId))
                         {
                             assessment.status = STATUS_ASSESSED;
                             assessment.levelId = sourceAssessment.levelId;
@@ -595,12 +457,12 @@
 
             this.config.categories.forEach(function(category)
             {
-                var sourceCategory = (source.hasOwnProperty(category.id) && Alpaca.isObject(source[category.id])) ? source[category.id] : {};
+                var sourceCategory = (hasOwn(source, category.id) && Alpaca.isObject(source[category.id])) ? source[category.id] : {};
                 criteria[category.id] = {};
 
                 category.levels.forEach(function(level)
                 {
-                    criteria[category.id][level.id] = (sourceCategory.hasOwnProperty(level.id) && Alpaca.isString(sourceCategory[level.id])) ?
+                    criteria[category.id][level.id] = (hasOwn(sourceCategory, level.id) && Alpaca.isString(sourceCategory[level.id])) ?
                         sourceCategory[level.id] :
                         (category.levelDescriptions[level.id] || level.description || "");
                 });
@@ -824,7 +686,7 @@
 
         _colorStyle: function(color)
         {
-            return "background-color:" + color + ";color:" + contrastTextColor(color) + ";";
+            return Support.colorStyle(color);
         },
 
         _toggleAriaLabel: function(category, duration, cell)
@@ -861,7 +723,7 @@
             var level = category.levelsById[levelId];
             if (!level) { return ""; }
 
-            if (category.levelDescriptions.hasOwnProperty(levelId) && category.levelDescriptions[levelId])
+            if (hasOwn(category.levelDescriptions, levelId) && category.levelDescriptions[levelId])
             {
                 return category.levelDescriptions[levelId];
             }
@@ -968,7 +830,7 @@
                 var $textarea = $(this);
                 var categoryId = $textarea.attr("data-category-id");
                 var levelId = $textarea.attr("data-level-id");
-                if (!self.data.criteria || !self.data.criteria.hasOwnProperty(categoryId) || !self.data.criteria[categoryId].hasOwnProperty(levelId)) { return; }
+                if (!self.data.criteria || !hasOwn(self.data.criteria, categoryId) || !hasOwn(self.data.criteria[categoryId], levelId)) { return; }
 
                 self.data.criteria[categoryId][levelId] = $textarea.val();
 
@@ -1005,10 +867,10 @@
          */
         setCellLevel: function(categoryId, durationId, levelId)
         {
-            if (!this.config.categoriesById.hasOwnProperty(categoryId) || !this.config.durationsById.hasOwnProperty(durationId)) { return; }
+            if (!hasOwn(this.config.categoriesById, categoryId) || !hasOwn(this.config.durationsById, durationId)) { return; }
 
             var category = this.config.categoriesById[categoryId];
-            if (levelId !== null && !category.levelsById.hasOwnProperty(levelId)) { return; }
+            if (levelId !== null && !hasOwn(category.levelsById, levelId)) { return; }
 
             var cell = this.data.assessments[categoryId][durationId];
             cell.status = levelId === null ? STATUS_UNASSESSED : STATUS_ASSESSED;
@@ -1023,7 +885,7 @@
          */
         cycleCellLevel: function(categoryId, durationId, direction)
         {
-            if (!this.config.categoriesById.hasOwnProperty(categoryId) || !this.config.durationsById.hasOwnProperty(durationId)) { return; }
+            if (!hasOwn(this.config.categoriesById, categoryId) || !hasOwn(this.config.durationsById, durationId)) { return; }
 
             var cell = this.data.assessments[categoryId][durationId];
 
@@ -1367,7 +1229,7 @@
                         notAssessed = true;
                         message = self._msg("impactAssessmentNotAssessed", [self._where(category, duration)]);
                     }
-                    else if (cell.status === STATUS_ASSESSED && !category.levelsById.hasOwnProperty(cell.levelId))
+                    else if (cell.status === STATUS_ASSESSED && !hasOwn(category.levelsById, cell.levelId))
                     {
                         status = false;
                         message = self._msg("impactAssessmentInvalidLevel", [self._where(category, duration)]);

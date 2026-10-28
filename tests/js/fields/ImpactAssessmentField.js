@@ -731,4 +731,32 @@
         }, 300);
     });
 
+    test("Ids and data keys that shadow Object.prototype members are handled safely", function() {
+        stop();
+        var config = testConfig();
+        config.categories[1].id = "hasOwnProperty";
+        config.levels[0].id = "toString";
+
+        var data = testData();
+        data.assessments.hasOwnProperty = data.assessments.delivery;
+        delete data.assessments.delivery;
+        data.assessments.financial.t24h = { status: "assessed", levelId: "toString", comment: "" };
+        data.assessments.financial.t2h = { status: "assessed", levelId: "valueOf", comment: "" };
+
+        addTarget("impact-assessment-22").alpaca({
+            "options": { "type": "ImpactAssessment", "config": config },
+            "data": data,
+            "postRender": function(control) {
+                expect(3);
+
+                var value = control.getValue();
+                equal(value.assessments.hasOwnProperty.t24h.levelId, "critical", "Category with id 'hasOwnProperty' keeps its data");
+                equal(value.assessments.financial.t24h.levelId, "toString", "Level with id 'toString' is accepted");
+                equal(value.assessments.financial.t2h.status, "unassessed", "An inherited member name is not treated as a configured level");
+
+                start();
+            }
+        });
+    });
+
 })(jQuery);
