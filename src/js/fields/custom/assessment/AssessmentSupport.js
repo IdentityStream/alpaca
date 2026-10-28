@@ -2,8 +2,6 @@
 
     var Alpaca = $.alpaca;
 
-    // Shared, DOM-free helpers for configurable assessment fields (scales, colors, config identity/versioning).
-
     var FORBIDDEN_KEYS = {
         "__proto__": true,
         "constructor": true,
@@ -106,11 +104,6 @@
         return Object.create(null);
     };
 
-    /**
-     * Validates config.id and config.version.
-     *
-     * @returns {String|null} error message, or null when valid
-     */
     var validateConfigIdentity = function(raw)
     {
         if (!isSafeId(raw.id))
@@ -124,10 +117,7 @@
         return null;
     };
 
-    /**
-     * True when a stored value declares a config id/version that differs from the given config.
-     * Values without any config metadata are treated as compatible.
-     */
+    // Legacy values without either metadata field remain compatible.
     var isConfigMismatch = function(value, config)
     {
         if (Alpaca.isEmpty(value.configId) && Alpaca.isEmpty(value.configVersion))
@@ -137,12 +127,7 @@
         return value.configId !== config.id || value.configVersion !== config.version;
     };
 
-    /**
-     * Validates and normalizes an ordinal scale (array of { id, rank, label, description?, color?, requireComment? }).
-     * Levels are sorted by rank and get a default color when none is configured.
-     *
-     * @returns {{levels: Array, levelsById: Object}|{error: String}}
-     */
+    // Duplicate IDs/ranks are rejected; valid levels are sorted and colored.
     var parseScale = function(rawLevels, context)
     {
         if (!Alpaca.isArray(rawLevels) || rawLevels.length === 0)

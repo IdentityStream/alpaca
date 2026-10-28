@@ -81,8 +81,6 @@
         };
     };
 
-    // Test case 1: columns render ascending by hours regardless of config order, and cells/durations/levels
-    // all come from configuration (no hardcoded values).
     test("Renders columns ascending by hours and reflects pre-filled data", function() {
         stop();
         addTarget("impact-assessment-1").alpaca({
@@ -111,7 +109,6 @@
         });
     });
 
-    // Test case 2: distinguishing unassessed vs. assessed(none) through getValue(), and dropping the removed notApplicable status.
     test("getValue() distinguishes unassessed from assessed-none, and treats legacy notApplicable as unassessed", function() {
         stop();
         var config = testConfig();
@@ -137,7 +134,6 @@
         });
     });
 
-    // Test case 3: editing a cell through the UI updates the value and fires change events.
     test("Clicking a cell cycles its level, updates the field value and triggers events", function() {
         stop();
         addTarget("impact-assessment-3").alpaca({
@@ -149,7 +145,6 @@
                 var changeFired = false;
                 control.on("change", function() { changeFired = true; });
 
-                // unassessed -> none -> low
                 clickToggle("impact-assessment-3", "delivery", "t2h");
                 clickToggle("impact-assessment-3", "delivery", "t2h");
 
@@ -159,7 +154,6 @@
                 equal(toggleButton("impact-assessment-3", "delivery", "t2h").text().trim(), "Lav", "Cell label follows the level");
                 ok(changeFired, "'change' event propagated through the field element");
 
-                // shift+click goes backwards: low -> none -> unassessed -> highest level (wraps)
                 clickToggle("impact-assessment-3", "delivery", "t2h", true);
                 clickToggle("impact-assessment-3", "delivery", "t2h", true);
                 equal(control.getValue().assessments.delivery.t2h.status, "unassessed", "Shift+click steps back to unassessed");
@@ -171,7 +165,6 @@
         });
     });
 
-    // Test case 4: help text updates per category (with fallback to the level's general description).
     test("Help text uses category-specific description, falling back to the level description", function() {
         stop();
         addTarget("impact-assessment-4").alpaca({
@@ -184,7 +177,6 @@
                     .closest(".alpaca-impact-assessment-cell").find(".alpaca-impact-assessment-cell-help");
                 equal(financialHelp.text(), "Store økonomiske tap.", "Category-specific levelDescriptions override the level description");
 
-                // "delivery" has no levelDescriptions and "critical" has no description -> empty, no error
                 var deliveryHelp = toggleButton("impact-assessment-4", "delivery", "t24h")
                     .closest(".alpaca-impact-assessment-cell").find(".alpaca-impact-assessment-cell-help");
                 equal(deliveryHelp.text(), "", "Missing description (no category override, no level description) renders as empty text without error");
@@ -194,7 +186,6 @@
         });
     });
 
-    // Test case 5: required-comment validation rules.
     test("Validation requires a comment from the configured level", function() {
         stop();
         addTarget("impact-assessment-5").alpaca({
@@ -203,9 +194,6 @@
             "postRender": function(control) {
                 expect(2);
 
-                // financial/t8h is "high" with a comment already -> should not block validity because of this cell
-                // delivery/t24h is "critical" with a comment -> ok
-                // financial/t24h is unassessed -> requireAllCells makes the whole field invalid regardless
                 control.refreshValidationState();
                 ok(!control.isValid(), "Field is invalid while a cell is still unassessed (requireAllCells)");
 
@@ -213,7 +201,6 @@
                 data.assessments.financial.t24h = { status: "assessed", levelId: "none", comment: "" };
                 control.setValue(data);
 
-                // now remove the required comment from the high-level cell
                 var financialComment = $("#impact-assessment-5 textarea[data-category-id='financial'][data-duration-id='t8h']");
                 financialComment.val("");
                 financialComment.trigger("change");
@@ -226,11 +213,10 @@
         });
     });
 
-    // Test case 6: invalid configuration is rejected with a clear error instead of silently rendering.
     test("Invalid configuration (duplicate level ranks) triggers the error callback instead of rendering", function() {
         stop();
         var badConfig = testConfig();
-        badConfig.levels[1].rank = badConfig.levels[0].rank; // duplicate rank
+        badConfig.levels[1].rank = badConfig.levels[0].rank;
 
         var errorSeen = false;
         addTarget("impact-assessment-6").alpaca({
@@ -246,7 +232,7 @@
             }
         });
 
-        // some Alpaca error paths never call postRender; fail safe after a short delay
+        // Some Alpaca error paths never call postRender.
         setTimeout(function() {
             if (!errorSeen) {
                 expect(1);
@@ -256,8 +242,6 @@
         }, 500);
     });
 
-    // Test case 6b: a field with no config yet (e.g. just dropped into a form designer) renders a
-    // friendly placeholder instead of invoking the error callback, which some hosts (re-)throw on.
     test("Missing options.config renders a placeholder without invoking the error callback", function() {
         stop();
         var errorSeen = false;
@@ -274,8 +258,6 @@
         });
     });
 
-    // Test case 6c: a form designer may initialize options.config as an empty/whitespace string
-    // rather than omitting it entirely; that must be treated the same as "not configured yet".
     test("Empty string options.config renders the same friendly placeholder, not a harsh error", function() {
         stop();
         var errorSeen = false;
@@ -292,8 +274,6 @@
         });
     });
 
-    // Test case 6d: the field's options schema exposes a minimal, valid example config as the
-    // default for "config", so a form designer can pre-fill newly created fields with something that works.
     test("getSchemaOfOptions() exposes a valid example config as the default for options.config", function() {
         stop();
 
@@ -311,7 +291,6 @@
         });
     });
 
-    // Test case 7: version mismatch is surfaced as a clear error and does not mutate/lose data.
     test("Config version mismatch renders a clear error and leaves the original value untouched", function() {
         stop();
         var mismatchedData = testData();
@@ -332,7 +311,6 @@
         });
     });
 
-    // Test case 8: safe rendering of configured/user text (no HTML injection).
     test("Category labels/descriptions and comments are rendered as text, not HTML", function() {
         stop();
         var config = testConfig();
@@ -355,7 +333,7 @@
                 var commentTextarea = $("#impact-assessment-8 textarea[data-category-id='financial'][data-duration-id='t2h']");
                 equal(commentTextarea.val(), "<b>bold</b>", "Comment text is preserved verbatim, not rendered as HTML");
 
-                // validation messages (which include the category label) are rendered by Alpaca without escaping
+                // Alpaca renders validation messages without escaping.
                 control.refreshValidationState();
                 equal($("#impact-assessment-8 .alpaca-message img").length, 0, "Validation messages do not render config text as HTML");
 
@@ -364,7 +342,6 @@
         });
     });
 
-    // Test case 9: multiple instances on the same page do not collide, and destroy() cleans up listeners.
     test("Multiple impact-assessment instances on the same page do not collide, and destroy() unbinds events", function() {
         stop();
         addTarget("impact-assessment-9a").alpaca({
@@ -377,7 +354,6 @@
                     "postRender": function(controlB) {
                         expect(3);
 
-                        // A: financial/t2h low -> high
                         clickToggle("impact-assessment-9a", "financial", "t2h");
 
                         notEqual(controlA.getValue().assessments.financial.t2h.levelId, controlB.getValue().assessments.financial.t2h.levelId,
@@ -396,7 +372,6 @@
         });
     });
 
-    // Test case 10: read-only view renders text instead of editable controls.
     test("Read-only view renders assessed values as text, with no editable controls", function() {
         stop();
         addTarget("impact-assessment-10").alpaca({
@@ -418,7 +393,7 @@
     test("Configured level and state colors are applied to cells", function() {
         stop();
         var config = testConfig();
-        config.levels[2].color = "#123456"; // high
+        config.levels[2].color = "#123456";
         config.colors = { unassessed: "#fafafa" };
 
         addTarget("impact-assessment-11").alpaca({
@@ -432,7 +407,6 @@
                 equal(cellOf("financial", "t8h").color, "rgb(255, 255, 255)", "Light text is chosen on a dark background");
                 equal(cellOf("delivery", "t2h").backgroundColor, "rgb(250, 250, 250)", "Configured unassessed color is used");
 
-                // low -> high
                 clickToggle("impact-assessment-11", "financial", "t2h");
                 equal(cellOf("financial", "t2h").backgroundColor, "rgb(18, 52, 86)", "Color updates when the level is toggled");
 
@@ -456,7 +430,6 @@
                 ok(cellOf("financial", "t8h").find(".alpaca-impact-assessment-comment-icon").hasClass("fa-pencil-alt"), "Present comments use the edit icon");
                 ok(cellOf("financial", "t2h").find(".alpaca-impact-assessment-comment-icon").hasClass("fa-plus"), "Empty comments use the add icon");
 
-                // low -> high requires a comment
                 clickToggle("impact-assessment-13", "financial", "t2h");
                 var cell = cellOf("financial", "t2h");
                 equal(cell.attr("data-comment-state"), "missing", "Required, empty comment is marked 'missing'");
@@ -491,7 +464,7 @@
         var data = testData();
         data.assessments.delivery = {
             t2h: { status: "assessed", levelId: "minor", comment: "" },
-            t8h: { status: "assessed", levelId: "high", comment: "" }, // not part of delivery's scale -> reset
+            t8h: { status: "assessed", levelId: "high", comment: "" }, // Not in delivery's scale.
             t24h: { status: "assessed", levelId: "major", comment: "" }
         };
 
@@ -592,8 +565,8 @@
     test("A level can require a comment explicitly, overriding requireCommentFromLevel", function() {
         stop();
         var config = testConfig();
-        config.levels[1].requireComment = true;  // low: required even though below the threshold
-        config.levels[3].requireComment = false; // critical: not required even though above the threshold
+        config.levels[1].requireComment = true;
+        config.levels[3].requireComment = false;
 
         var data = testData();
         data.assessments.financial.t24h = { status: "assessed", levelId: "critical", comment: "" };

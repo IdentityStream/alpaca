@@ -3,28 +3,6 @@
 
     var Alpaca = $.alpaca;
 
-    // ----------------------------------------------------------------------------------------------------------
-    // Internal constants / helpers
-    //
-    // Architecture note:
-    //
-    // The preferred starting point suggested for this component was to extend Alpaca.ObjectField and generate
-    // a schema/options tree of standard Alpaca fields (one child field per category/duration/cell-property).
-    // After inspecting this fork's ObjectField/ContainerField implementation, that approach was rejected:
-    // ObjectField renders one nested "container-object" fieldset per object level, so a 3-level schema
-    // (category -> duration -> {status, levelId, comment}) would render as deeply nested fieldsets, not a
-    // compact matrix table, and reshaping that via templates alone would require overriding container
-    // rendering at every level anyway.
-    //
-    // Instead this field follows the convention already established by the other bespoke composite fields in
-    // this fork (RiskScoreField, DoraAssessmentField): it extends Alpaca.ControlField, keeps a single
-    // JSON value (this.data) for the whole matrix, renders a custom template, and wires native
-    // <select>/<textarea> controls by hand in afterRenderControl(). This keeps Alpaca's standard value
-    // handling (getValue/setValue), validation (validate/handleValidate/refreshValidationState) and event
-    // propagation (triggerUpdate/triggerWithPropagation, "fieldupdate"/"change") intact, while giving full
-    // control over the table layout required by the spec.
-    // ----------------------------------------------------------------------------------------------------------
-
     var STATUS_UNASSESSED = "unassessed";
     var STATUS_ASSESSED = "assessed";
 
@@ -42,8 +20,7 @@
 
     var escapeSelector = function(id)
     {
-        // minimal escaping for use inside jQuery attribute selectors; ids are already restricted
-        // by isSafeId() to [a-zA-Z0-9_-], so this is defensive rather than strictly necessary
+        // Keep attribute selectors safe if the ID restrictions change.
         return String(id).replace(/(["\\])/g, "\\$1");
     };
 
@@ -52,17 +29,11 @@
      * @lends Alpaca.Fields.ImpactAssessmentField.prototype
      */
     {
-        /**
-         * @see Alpaca.Field#getFieldType
-         */
         getFieldType: function()
         {
             return "ImpactAssessment";
         },
 
-        /**
-         * @see Alpaca.Field#getType
-         */
         getType: function()
         {
             return "object";
@@ -78,17 +49,11 @@
             return "Registers consequences of a function or process outage over time, as part of a Business Impact Analysis (BIA).";
         },
 
-        /**
-         * @see Alpaca.Field#setup
-         */
         setup: function()
         {
             this.base();
 
-            // A field dropped into a form designer has no config yet; show a friendly placeholder
-            // instead of treating the expected "not configured" state as an invalid-configuration error.
-            // A designer-bound options.config may arrive as an empty/whitespace string rather than
-            // undefined/null/{}, so that case must be treated as "unconfigured" too.
+            // Form designers may initialize an unconfigured field with an empty string.
             var rawConfig = this.options.config;
             var unconfigured = Alpaca.isEmpty(rawConfig) || (Alpaca.isString(rawConfig) && rawConfig.trim() === "");
             if (unconfigured)
@@ -100,7 +65,7 @@
             var configResult = this._buildConfig(this.options.config);
             if (configResult.error)
             {
-                // Alpaca keeps rendering after the error callback, so the field must still survive without a config
+                // Alpaca continues rendering after the error callback.
                 this.config = null;
                 this._configError = this._msg("impactAssessmentInvalidConfig", [configResult.error]);
                 return Alpaca.throwErrorWithCallback("ImpactAssessment: invalid configuration - " + configResult.error, this.errorCallback);
@@ -111,17 +76,6 @@
             this.data = this._normalizeValue(this.data);
         },
 
-        // ------------------------------------------------------------------------------------------------
-        // Configuration handling
-        // ------------------------------------------------------------------------------------------------
-
-        /**
-         * Validates and normalizes options.config into an internal structure.
-         * Never mutates the config object that was passed in.
-         *
-         * @param rawConfig
-         * @returns {{config: Object}|{error: String}}
-         */
         _buildConfig: function(rawConfig)
         {
             if (!rawConfig || !Alpaca.isObject(rawConfig))
@@ -129,7 +83,7 @@
                 return { error: "options.config is required and must be an object" };
             }
 
-            // deep clone defensively so we never mutate the caller's object
+            // Avoid mutating caller-owned options during normalization.
             var raw;
             try
             {
@@ -157,7 +111,6 @@
                 return { error: "config.levels is required when axis is '" + AXIS_LEVEL + "'" };
             }
 
-            // ---- global levels (optional when every category defines its own) ----
             var globalLevels = { levels: [], levelsById: createMap() };
             if (!Alpaca.isEmpty(raw.levels))
             {
@@ -165,7 +118,6 @@
                 if (globalLevels.error) { return globalLevels; }
             }
 
-            // ---- categories ----
             if (!Alpaca.isArray(raw.categories) || raw.categories.length === 0)
             {
                 return { error: "config.categories must be a non-empty array" };
@@ -192,7 +144,6 @@
                 var catLevels = globalLevels;
                 if (!Alpaca.isEmpty(rawCat.levels))
                 {
-                    // columns are the shared levels, so every row must use the same scale
                     if (levelAxis)
                     {
                         return { error: "category '" + rawCat.id + "' cannot define its own levels when axis is '" + AXIS_LEVEL + "'" };
@@ -239,7 +190,6 @@
                 categoriesById[category.id] = category;
             }
 
-            // ---- durations (not used with axis "level", which only displays the assessment criteria) ----
             var durations = [];
             var durationsById = createMap();
             var seenHours = createMap();
@@ -276,10 +226,8 @@
                 durations.push(duration);
                 durationsById[duration.id] = duration;
             }
-            // show durations ascending by hours, regardless of configured array order
             durations.sort(function(a, b) { return a.hours - b.hours; });
 
-            // ---- colors for non-level states ----
             var rawColors = (raw.colors && Alpaca.isObject(raw.colors)) ? raw.colors : {};
             var stateColors = {};
             var stateColorDefaults = { unassessed: DEFAULT_UNASSESSED_COLOR };
@@ -300,8 +248,6 @@
                 }
             }
 
-            // ---- rules ----
-            // "first unacceptable duration" and "decreasing over time" only make sense with a time axis
             var hasThreshold = !levelAxis && categories.some(function(c) { return c.unacceptableRank !== null; });
 
             var config = {
@@ -324,11 +270,7 @@
             return { config: config };
         },
 
-        /**
-         * Resolves a threshold rule (category override, else global) to a rank. The level id is looked up in
-         * the category's own levels first, then in the global levels, so a global rule can apply to
-         * categories with their own scale as long as ranks are comparable.
-         */
+        // Global thresholds can resolve against a category-specific scale by rank.
         _resolveThresholdRank: function(categoryValue, globalValue, category, globalLevels, ruleName)
         {
             var levelId = !Alpaca.isEmpty(categoryValue) ? categoryValue : globalValue;
@@ -355,10 +297,6 @@
             return level ? level.rank : null;
         },
 
-        // ------------------------------------------------------------------------------------------------
-        // Value handling
-        // ------------------------------------------------------------------------------------------------
-
         _emptyAssessment: function()
         {
             return { status: STATUS_UNASSESSED, levelId: null, comment: "" };
@@ -369,11 +307,6 @@
             return Support.cloneJson(value);
         },
 
-        /**
-         * Builds a safe internal value from whatever was passed in (schema default, bound data, setValue
-         * argument, etc). Unknown/legacy data for category or duration ids that are no longer part of the
-         * current config is preserved under a separate bucket rather than silently discarded.
-         */
         _normalizeValue: function(raw)
         {
             var self = this;
@@ -446,10 +379,6 @@
             };
         },
 
-        /**
-         * Criteria texts (axis "level") per category and level. Stored texts win; missing ones fall back to
-         * the configured levelDescriptions / level description.
-         */
         _normalizeCriteria: function(rawCriteria)
         {
             var source = (rawCriteria && Alpaca.isObject(rawCriteria)) ? rawCriteria : {};
@@ -471,9 +400,6 @@
             return criteria;
         },
 
-        /**
-         * @see Alpaca.ControlField#getValue
-         */
         getValue: function()
         {
             if (!this.config)
@@ -483,16 +409,12 @@
 
             if (this._versionError)
             {
-                // config/version mismatch: hand back exactly what we were given, untouched
                 return this._rawIncompatibleValue ? this._cloneValue(this._rawIncompatibleValue) : this.data;
             }
 
             return this._cloneValue(this.data);
         },
 
-        /**
-         * @see Alpaca.Field#setValue
-         */
         setValue: function(value)
         {
             if (!this.config)
@@ -515,21 +437,11 @@
             }
         },
 
-        /**
-         * @see Alpaca.Field#setDefault
-         */
         setDefault: function()
         {
             this.setValue(this.schema && !Alpaca.isEmpty(this.schema["default"]) ? this.schema["default"] : {});
         },
 
-        // ------------------------------------------------------------------------------------------------
-        // Rendering
-        // ------------------------------------------------------------------------------------------------
-
-        /**
-         * @see Alpaca.ControlField#prepareControlModel
-         */
         prepareControlModel: function(callback)
         {
             var self = this;
@@ -560,8 +472,7 @@
                 };
                 model.levelAxis = self.config.levelAxis;
 
-                // a shared legend only makes sense when all categories use the same scale; with levels as
-                // columns the column headers already act as the legend
+                // Category-specific scales cannot share a legend.
                 model.levelLegend = (self.config.hasCategoryLevels || self.config.levelAxis) ? [] : self.config.levels.map(function(level)
                 {
                     return { id: level.id, label: level.label, style: self._colorStyle(level.color) };
@@ -738,7 +649,7 @@
                 return false;
             }
 
-            // an explicit flag on the level wins over the requireCommentFromLevel threshold
+            // An explicit level flag overrides the threshold.
             var level = category.levelsById[cell.levelId];
             if (level.requireComment !== null)
             {
@@ -753,9 +664,6 @@
             return false;
         },
 
-        /**
-         * @see Alpaca.ControlField#afterRenderControl
-         */
         afterRenderControl: function(model, callback)
         {
             var self = this;
@@ -783,10 +691,9 @@
             var self = this;
             var ns = "." + this._eventNamespace();
 
-            // unbind first in case of re-render, so we never double-bind
+            // Re-rendering must not register duplicate handlers.
             $(this.control).off(ns);
 
-            // opening/closing comments is also allowed in read-only/display mode
             $(this.control).on("click" + ns, "button.alpaca-impact-assessment-comment-toggle, .alpaca-impact-assessment-comment-preview[data-category-id]", function()
             {
                 var $button = $(this);
@@ -841,9 +748,6 @@
 
         },
 
-        /**
-         * Opens/closes the comment panel of a cell. Omit `open` to toggle.
-         */
         toggleCommentPanel: function(categoryId, durationId, open)
         {
             var $cell = this._findCellEl(categoryId, durationId);
@@ -862,9 +766,7 @@
             }
         },
 
-        /**
-         * Sets the level of a cell directly. Pass levelId null to mark the cell as unassessed.
-         */
+        // A null level marks the cell as unassessed.
         setCellLevel: function(categoryId, durationId, levelId)
         {
             if (!hasOwn(this.config.categoriesById, categoryId) || !hasOwn(this.config.durationsById, durationId)) { return; }
@@ -879,10 +781,7 @@
             this._afterCellChange(categoryId, durationId);
         },
 
-        /**
-         * Moves a cell to the next (direction 1) or previous (direction -1) state in the cycle:
-         * unassessed -> the category's levels by ascending rank -> unassessed.
-         */
+        // Cycles unassessed and the category's levels by rank; a negative direction steps backwards.
         cycleCellLevel: function(categoryId, durationId, direction)
         {
             if (!hasOwn(this.config.categoriesById, categoryId) || !hasOwn(this.config.durationsById, durationId)) { return; }
@@ -923,10 +822,7 @@
             this.triggerWithPropagation("change");
         },
 
-        /**
-         * Updates the dynamic parts of a single cell's markup (label, color, help text, required marker)
-         * without rebuilding the controls, so focus is preserved.
-         */
+        // Update in place to preserve focus.
         _updateCellHelpAndState: function(category, duration, cell)
         {
             var $cell = this._findCellEl(category.id, duration.id);
@@ -972,10 +868,7 @@
             );
         },
 
-        /**
-         * Re-applies this.data onto the already-rendered DOM controls. Used after setValue()/load so that
-         * both initial render and programmatic updates share one code path.
-         */
+        // Programmatic updates and initial render use the same synchronization path.
         _syncControlsFromData: function()
         {
             var self = this;
@@ -1014,10 +907,6 @@
             $(this.control).toggleClass("alpaca-impact-assessment-has-error", !!this._versionError);
             $(this.control).find(".alpaca-impact-assessment-version-error").text(this._versionError || "");
         },
-
-        // ------------------------------------------------------------------------------------------------
-        // Summary + decreasing-impact warnings (section 10 / 8 of the spec)
-        // ------------------------------------------------------------------------------------------------
 
         _computeSummary: function()
         {
@@ -1120,7 +1009,7 @@
                 var summary = this._computeSummary();
                 $summary.empty();
 
-                // only categories that actually reached the unacceptable threshold are worth reporting
+                // Incomplete categories are not reported as unacceptable without a threshold hit.
                 var unacceptableEntries = summary.categories.filter(function(entry) { return !!entry.firstUnacceptableDuration; });
 
                 if (!summary.hasThreshold || unacceptableEntries.length === 0)
@@ -1177,13 +1066,6 @@
             }
         },
 
-        // ------------------------------------------------------------------------------------------------
-        // Validation
-        // ------------------------------------------------------------------------------------------------
-
-        /**
-         * @see Alpaca.Field#handleValidate
-         */
         handleValidate: function()
         {
             var baseStatus = this.base();
@@ -1208,9 +1090,7 @@
                 valInfo["impactAssessmentVersion"] = { status: true, message: "" };
             }
 
-            // cells that are simply "not assessed yet" are reported as a single, combined message below
-            // instead of one message per cell - otherwise a freshly added field with many empty cells
-            // would immediately show a large wall of identical-looking validation messages
+            // Aggregate unassessed cells to avoid repeating the same validation message for each cell.
             var notAssessedCount = 0;
 
             this.config.categories.forEach(function(category)
@@ -1242,7 +1122,6 @@
 
                     if (notAssessed)
                     {
-                        // counted towards the combined message instead of its own valInfo entry
                         notAssessedCount++;
                     }
                     else
@@ -1281,10 +1160,6 @@
             return baseStatus && overallStatus;
         },
 
-        // ------------------------------------------------------------------------------------------------
-        // Enable / disable / destroy
-        // ------------------------------------------------------------------------------------------------
-
         disable: function()
         {
             if (this.control)
@@ -1310,9 +1185,6 @@
             return false;
         },
 
-        /**
-         * @see Alpaca.Field#destroy
-         */
         destroy: function()
         {
             if (this.control)
@@ -1322,10 +1194,6 @@
 
             this.base();
         },
-
-        // ------------------------------------------------------------------------------------------------
-        // Builder metadata (consistent with the other custom fields in this fork)
-        // ------------------------------------------------------------------------------------------------
 
         getSchemaOfOptions: function()
         {
@@ -1354,9 +1222,6 @@
             });
         },
 
-        /**
-         * A minimal, valid options.config used to pre-fill newly created fields.
-         */
         _exampleConfig: function()
         {
             return {
@@ -1381,7 +1246,6 @@
 
     Alpaca.registerFieldClass("ImpactAssessment", Alpaca.Fields.ImpactAssessmentField);
 
-    // Default (English) texts. Translate per locale in src/js/messages/i18n/*.js, or override via view "messages".
     Alpaca.registerMessages({
         "impactAssessmentCriteriaLabel": "{0} – {1}: assessment criteria",
         "impactAssessmentCriteriaPlaceholder": "Describe the criteria for this level",

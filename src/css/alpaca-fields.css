@@ -417,8 +417,6 @@ table.dt-rowReorder-float .alpaca-table-reorder-draggable-cell
     pointer-events: none;
 }
 
-/* impact-assessment field --------------------------------------------------------------------------------------- */
-
 .alpaca-impact-assessment .alpaca-impact-assessment-version-error:empty {
     display: none;
 }
@@ -428,8 +426,6 @@ table.dt-rowReorder-float .alpaca-table-reorder-draggable-cell
     display: none;
 }
 
-/* shared box style for the summary/warnings messages below the table, so they match in placement and look,
-   while a severity modifier (danger/warning/info) keeps their color distinct - same convention as Bootstrap alerts */
 .alpaca-impact-assessment-messages {
     margin-bottom: 8px;
 }
@@ -569,7 +565,6 @@ table.dt-rowReorder-float .alpaca-table-reorder-draggable-cell
     padding: 6px 20px 6px 6px;
 }
 
-/* comment indicator in the top-right corner of the cell */
 .alpaca-impact-assessment-comment-toggle {
     position: absolute;
     top: 1px;
@@ -666,7 +661,6 @@ table.dt-rowReorder-float .alpaca-table-reorder-draggable-cell
     outline-offset: -2px;
 }
 
-/* axis "level": read-only criteria per category (row) and level (column) */
 .alpaca-impact-assessment-table td.alpaca-impact-assessment-criteria-cell {
     min-width: 120px;
     padding: 6px;

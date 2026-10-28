@@ -45,8 +45,6 @@
 </div>
 
 <script>
-    // Configuration as defined by the spec (section 3). Any array order/ids/ranks/hours are data-driven;
-    // nothing here requires code changes to the impact-assessment component itself.
     var impactAssessmentStandardConfig = {
         id: "bia-standard",
         version: 1,
@@ -68,7 +66,7 @@
                 id: "delivery",
                 label: "Leveranser og kunder",
                 description: "Konsekvenser for avtalte leveranser.",
-                // this category uses its own scale instead of the shared config.levels
+                // This category overrides the shared scale.
                 levels: [
                     { id: "none", rank: 0, label: "Ingen", description: "Ingen påvirkning på leveranser." },
                     { id: "delay", rank: 2, label: "Forsinkelse", description: "Avtalte leveranser forsinkes og krever ekstra tiltak." },
@@ -100,7 +98,6 @@
         warnOnDecreasingImpact: true
     };
 
-    // Pre-filled data matching the ImpactAssessment field's config/data structure
     var impactAssessmentStandardData = {
         configId: "bia-standard",
         configVersion: 1,
