@@ -165,6 +165,37 @@
         });
     });
 
+    test("Arrow keys navigate cells and Shift+Enter cycles backward", function() {
+        stop();
+        addTarget("impact-assessment-keyboard").alpaca({
+            "options": { "type": "ImpactAssessment", "config": testConfig() },
+            "data": testData(),
+            "postRender": function(control) {
+                expect(6);
+
+                var firstButton = toggleButton("impact-assessment-keyboard", "financial", "t2h");
+                firstButton[0].focus();
+                firstButton.trigger($.Event("keydown", { key: "ArrowRight", keyCode: 39 }));
+                ok(document.activeElement === toggleButton("impact-assessment-keyboard", "financial", "t8h")[0], "ArrowRight moves to the next duration");
+
+                toggleButton("impact-assessment-keyboard", "financial", "t8h").trigger($.Event("keydown", { key: "ArrowDown", keyCode: 40 }));
+                ok(document.activeElement === toggleButton("impact-assessment-keyboard", "delivery", "t8h")[0], "ArrowDown moves to the next category");
+
+                var reverseEvent = $.Event("keydown", { key: "Enter", keyCode: 13, shiftKey: true });
+                toggleButton("impact-assessment-keyboard", "delivery", "t8h").trigger(reverseEvent);
+                equal(control.getValue().assessments.delivery.t8h.levelId, "none", "Shift+Enter cycles to the previous level");
+                ok(reverseEvent.isDefaultPrevented(), "Shift+Enter prevents the button's forward activation");
+
+                firstButton[0].focus();
+                firstButton.trigger($.Event("keydown", { key: "ArrowLeft", keyCode: 37 }));
+                ok(document.activeElement === firstButton[0], "ArrowLeft does not wrap at the first duration");
+                equal(control.getValue().assessments.financial.t2h.levelId, "low", "Navigation alone does not change cell values");
+
+                start();
+            }
+        });
+    });
+
     test("Help text uses category-specific description, falling back to the level description", function() {
         stop();
         addTarget("impact-assessment-4").alpaca({

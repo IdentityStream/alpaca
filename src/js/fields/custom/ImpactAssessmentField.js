@@ -721,6 +721,11 @@
                 self.cycleCellLevel($button.attr("data-category-id"), $button.attr("data-duration-id"), e.shiftKey ? -1 : 1);
             });
 
+            $(this.control).on("keydown" + ns, "button.alpaca-impact-assessment-level-toggle", function(e)
+            {
+                self._handleLevelKeydown(e, $(this).attr("data-category-id"), $(this).attr("data-duration-id"));
+            });
+
             $(this.control).on("change" + ns + " input" + ns, "textarea.alpaca-impact-assessment-comment", function()
             {
                 var $textarea = $(this);
@@ -805,6 +810,58 @@
             cell.levelId = next.levelId;
 
             this._afterCellChange(categoryId, durationId);
+        },
+
+        _handleLevelKeydown: function(e, categoryId, durationId)
+        {
+            if (e.altKey || e.ctrlKey || e.metaKey) { return; }
+
+            var key = e.key;
+            var keyCode = e.which || e.keyCode;
+            var offsets = {
+                ArrowLeft: [0, -1],
+                ArrowRight: [0, 1],
+                ArrowUp: [-1, 0],
+                ArrowDown: [1, 0]
+            };
+            var offset = offsets[key] || ({
+                37: [0, -1],
+                39: [0, 1],
+                38: [-1, 0],
+                40: [1, 0]
+            })[keyCode];
+
+            if (offset)
+            {
+                e.preventDefault();
+                this._focusAdjacentCell(categoryId, durationId, offset[0], offset[1]);
+                return;
+            }
+
+            if (e.shiftKey && (key === "Enter" || keyCode === 13 || key === " " || key === "Spacebar" || keyCode === 32))
+            {
+                e.preventDefault();
+                this.cycleCellLevel(categoryId, durationId, -1);
+            }
+        },
+
+        _focusAdjacentCell: function(categoryId, durationId, rowOffset, columnOffset)
+        {
+            var category = this.config.categoriesById[categoryId];
+            var duration = this.config.durationsById[durationId];
+            if (!category || !duration) { return; }
+
+            var rowIndex = $.inArray(category, this.config.categories);
+            var columnIndex = $.inArray(duration, this.config.durations);
+            var nextCategory = this.config.categories[rowIndex + rowOffset];
+            var nextDuration = this.config.durations[columnIndex + columnOffset];
+            if (!nextCategory || !nextDuration) { return; }
+
+            var $nextButton = this._findCellEl(nextCategory.id, nextDuration.id).find("button.alpaca-impact-assessment-level-toggle").first();
+            if ($nextButton.length && !$nextButton.prop("disabled"))
+            {
+                $nextButton.trigger("focus");
+            }
         },
 
         _afterCellChange: function(categoryId, durationId, skipControlRefresh)
