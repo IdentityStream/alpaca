@@ -133,6 +133,8 @@ var paths = {
             "src/js/fields/advanced/UpperCaseField.js",
             "src/js/fields/advanced/URLField.js",
             "src/js/fields/advanced/ZipcodeField.js",
+            // shared helpers used by custom fields must load before them
+            "src/js/fields/custom/assessment/AssessmentSupport.js",
             //Add all custom fields. If we have one custom field which extends another custom field, we will have to change to list them explicitly.
             "src/js/fields/custom/*.js",
             // base view

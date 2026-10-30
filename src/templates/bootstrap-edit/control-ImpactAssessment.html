@@ -1,0 +1,126 @@
+<script type="text/x-handlebars-template">
+
+    <div class="alpaca-impact-assessment {{#if hasError}}alpaca-impact-assessment-has-error{{/if}}">
+
+        <div class="alpaca-impact-assessment-version-error alert alert-danger" role="alert">{{errorMessage}}</div>
+
+        {{#unless hasError}}
+
+        {{#if levelLegend.length}}
+        <ul class="alpaca-impact-assessment-legend" aria-label="{{text.legendLabel}}">
+            {{#each levelLegend}}
+            <li><span class="alpaca-impact-assessment-legend-swatch" style="{{style}}">{{label}}</span></li>
+            {{/each}}
+        </ul>
+        {{/if}}
+
+        <div class="alpaca-impact-assessment-table-wrapper">
+            <table class="table table-bordered table-condensed alpaca-impact-assessment-table">
+                <caption class="sr-only">{{text.tableCaption}}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col" class="alpaca-impact-assessment-row-header-col">{{text.categoryHeader}}</th>
+                        {{#each columns}}
+                        <th scope="col" {{#if style}}style="{{style}}"{{/if}}>{{label}}</th>
+                        {{/each}}
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each rows}}
+                    <tr>
+                        <th scope="row" class="alpaca-impact-assessment-row-header">
+                            <div class="alpaca-impact-assessment-category-label">{{label}}</div>
+                            {{#if @root.levelAxis}}
+                            {{#if description}}<div class="alpaca-impact-assessment-category-description">{{description}}</div>{{/if}}
+                            {{else}}
+                            <details class="alpaca-impact-assessment-criteria" id="{{criteriaId}}">
+                                <summary>{{@root.text.showCriteria}}</summary>
+                                {{#if description}}<div class="alpaca-impact-assessment-category-description">{{description}}</div>{{/if}}
+                                <dl>
+                                    {{#each criteria}}
+                                    <dt><span class="alpaca-impact-assessment-legend-swatch" style="{{style}}">{{label}}</span></dt>
+                                    <dd>{{#if description}}{{description}}{{else}}{{@root.text.noDescription}}{{/if}}</dd>
+                                    {{/each}}
+                                </dl>
+                            </details>
+                            {{/if}}
+                        </th>
+                        {{#if @root.levelAxis}}
+                        {{#each criteria}}
+                        <td class="alpaca-impact-assessment-criteria-cell" data-level-id="{{id}}" style="{{style}}">
+                            {{#if @root.readonly}}
+                            <span class="alpaca-impact-assessment-criteria-text">{{#if description}}{{description}}{{else}}{{@root.text.noDescription}}{{/if}}</span>
+                            {{else}}
+                            <label class="sr-only" for="{{inputId}}">{{inputLabel}}</label>
+                            <textarea id="{{inputId}}"
+                                      class="alpaca-impact-assessment-criteria-input"
+                                      data-category-id="{{categoryId}}"
+                                      data-level-id="{{id}}"
+                                      rows="3"
+                                      placeholder="{{@root.text.criteriaPlaceholder}}">{{description}}</textarea>
+                            {{/if}}
+                        </td>
+                        {{/each}}
+                        {{/if}}
+                        {{#each cells}}
+                        <td class="alpaca-impact-assessment-cell" data-category-id="{{categoryId}}" data-duration-id="{{durationId}}" data-status="{{status}}" data-level-id="{{levelId}}" data-comment-state="{{commentState}}" style="{{cellStyle}}">
+
+                            <button type="button" id="{{toggleId}}"
+                                    class="alpaca-impact-assessment-level-toggle"
+                                    data-category-id="{{categoryId}}"
+                                    data-duration-id="{{durationId}}"
+                                    aria-label="{{toggleAriaLabel}}"
+                                    aria-describedby="{{helpId}} {{errorId}}"
+                                    title="{{helpText}}"
+                                    {{#if readonly}}disabled{{/if}}>
+                                <span class="alpaca-impact-assessment-level-label">{{cellLabel}}</span>
+                            </button>
+
+                            <div class="alpaca-impact-assessment-comment-preview" data-category-id="{{categoryId}}" data-duration-id="{{durationId}}" title="{{comment}}" {{#unless hasComment}}hidden{{/unless}}>{{comment}}</div>
+
+                            <button type="button"
+                                    class="alpaca-impact-assessment-comment-toggle"
+                                    data-category-id="{{categoryId}}"
+                                    data-duration-id="{{durationId}}"
+                                    aria-expanded="false"
+                                    aria-controls="{{commentPanelId}}"
+                                    aria-label="{{commentToggleLabel}}"
+                                    title="{{commentToggleLabel}}">
+                                <i class="alpaca-impact-assessment-comment-icon {{commentIconClass}}" aria-hidden="true"></i>
+                            </button>
+
+                            <span id="{{helpId}}" class="sr-only alpaca-impact-assessment-cell-help">{{helpText}}</span>
+                            <span id="{{errorId}}" class="sr-only alpaca-impact-assessment-cell-error" aria-live="polite"></span>
+
+                            <div id="{{commentPanelId}}" class="alpaca-impact-assessment-comment-panel" hidden>
+                                <label class="sr-only" for="{{commentId}}">{{commentAriaLabel}}</label>
+                                <textarea id="{{commentId}}"
+                                          rows="3"
+                                          class="form-control alpaca-impact-assessment-comment"
+                                          data-category-id="{{categoryId}}"
+                                          data-duration-id="{{durationId}}"
+                                          aria-label="{{commentAriaLabel}}"
+                                          aria-describedby="{{errorId}}"
+                                          aria-required="{{#if commentRequired}}true{{else}}false{{/if}}"
+                                          placeholder="{{@root.text.commentPlaceholder}}"
+                                          {{#if readonly}}readonly{{/if}}>{{comment}}</textarea>
+                            </div>
+
+                        </td>
+                        {{/each}}
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="alpaca-impact-assessment-messages">
+            <div class="alpaca-impact-assessment-summary alpaca-impact-assessment-message alpaca-impact-assessment-message-danger" role="note"></div>
+            <div class="alpaca-impact-assessment-warnings alpaca-impact-assessment-message alpaca-impact-assessment-message-warning" role="status" aria-live="polite"></div>
+        </div>
+
+        {{/unless}}
+
+    </div>
+
+</script>

@@ -1,0 +1,72 @@
+<script type="text/x-handlebars-template">
+
+    <div class="alpaca-impact-assessment alpaca-impact-assessment-readonly {{#if hasError}}alpaca-impact-assessment-has-error{{/if}}">
+
+        <div class="alpaca-impact-assessment-version-error alert alert-danger" role="alert">{{errorMessage}}</div>
+
+        {{#unless hasError}}
+
+        {{#if levelLegend.length}}
+        <ul class="alpaca-impact-assessment-legend" aria-label="{{text.legendLabel}}">
+            {{#each levelLegend}}
+            <li><span class="alpaca-impact-assessment-legend-swatch" style="{{style}}">{{label}}</span></li>
+            {{/each}}
+        </ul>
+        {{/if}}
+
+        <div class="alpaca-impact-assessment-table-wrapper">
+            <table class="table table-bordered table-condensed alpaca-impact-assessment-table">
+                <caption class="sr-only">{{text.tableCaption}}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col" class="alpaca-impact-assessment-row-header-col">{{text.categoryHeader}}</th>
+                        {{#each columns}}
+                        <th scope="col" {{#if style}}style="{{style}}"{{/if}}>{{label}}</th>
+                        {{/each}}
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each rows}}
+                    <tr>
+                        <th scope="row" class="alpaca-impact-assessment-row-header">
+                            <div class="alpaca-impact-assessment-category-label">{{label}}</div>
+                            {{#if @root.levelAxis}}
+                            {{#if description}}<div class="alpaca-impact-assessment-category-description">{{description}}</div>{{/if}}
+                            {{else}}
+                            <details class="alpaca-impact-assessment-criteria">
+                                <summary>{{@root.text.showCriteria}}</summary>
+                                {{#if description}}<div class="alpaca-impact-assessment-category-description">{{description}}</div>{{/if}}
+                                <dl>
+                                    {{#each criteria}}
+                                    <dt><span class="alpaca-impact-assessment-legend-swatch" style="{{style}}">{{label}}</span></dt>
+                                    <dd>{{#if description}}{{description}}{{else}}{{@root.text.noDescription}}{{/if}}</dd>
+                                    {{/each}}
+                                </dl>
+                            </details>
+                            {{/if}}
+                        </th>
+                        {{#if @root.levelAxis}}
+                        {{#each criteria}}
+                        <td class="alpaca-impact-assessment-criteria-cell" data-level-id="{{id}}" style="{{style}}"><span class="alpaca-impact-assessment-criteria-text">{{#if description}}{{description}}{{else}}{{@root.text.noDescription}}{{/if}}</span></td>
+                        {{/each}}
+                        {{/if}}
+                        {{#each cells}}
+                        <td class="alpaca-impact-assessment-cell" data-category-id="{{categoryId}}" data-duration-id="{{durationId}}" data-status="{{status}}" data-level-id="{{levelId}}" data-comment-state="{{commentState}}" style="{{cellStyle}}">
+                            <div class="alpaca-impact-assessment-level-label" title="{{helpText}}">{{cellLabel}}</div>
+                            <span class="sr-only alpaca-impact-assessment-cell-help">{{helpText}}</span>
+                            {{#if hasComment}}
+                            <div class="alpaca-impact-assessment-comment-preview alpaca-impact-assessment-cell-comment">{{comment}}</div>
+                            {{/if}}
+                        </td>
+                        {{/each}}
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+
+        {{/unless}}
+
+    </div>
+
+</script>
