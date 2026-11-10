@@ -48,6 +48,12 @@
                     );
                 }
             });
+            if(self.options.showThirdPartyReportedOption === false) {
+                var thirdPartyField = self.parent.childrenByPropertyId["DoraReportedByThirdParty"];
+                if(thirdPartyField) {
+                    thirdPartyField.hide();
+                }
+            }
             self.updateDoraAssessment();
             if(self.options.updateCauses) {
                 var doraCausesFields = [
@@ -158,7 +164,8 @@
             var self = this;
             var currentValue = self.getValue();
             var doraAssessment = "No";
-            if(self.parent.childrenByPropertyId["DoraReportedByThirdParty"].getValue() === "Yes") {
+            var thirdPartyField = self.parent.childrenByPropertyId["DoraReportedByThirdParty"];
+            if(self.options.showThirdPartyReportedOption !== false && thirdPartyField && thirdPartyField.getValue() === "Yes") {
                 doraAssessment = "YesReportedByThirdParty";
                 if (self.firstUpdate || doraAssessment !== currentValue) {
                     self.setValue(doraAssessment);
@@ -248,6 +255,12 @@
                             description: "Updates the causes based on DORA selection.",
                             type: "boolean",
                             default: true
+                        },
+                        showThirdPartyReportedOption: {
+                            title: "Show third party reported option",
+                            description: "Keep enabled for existing forms to preserve their current behavior. Disable for new forms that should not ask/use whether the incident was reported by a third party.",
+                            type: "boolean",
+                            default: true
                         }
                     }
                 });
@@ -263,6 +276,10 @@
                         },
                         updateCauses: {
                             rightLabel: "Update causes based on DORA selection?",
+                            "type": "checkbox",
+                        },
+                        showThirdPartyReportedOption: {
+                            rightLabel: "Show third party reported option?",
                             "type": "checkbox",
                         }
                     }
